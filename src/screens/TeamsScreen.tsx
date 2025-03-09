@@ -428,7 +428,7 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
               style={[styles.sortButton, sortBy === 'name' && styles.activeSortButton]}
               onPress={() => toggleSort('name')}
             >
-              <Text style={styles.sortButtonText}>
+              <Text style={[styles.sortButtonText,sortBy === 'name' && {color:'white'}]}>
                 Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Text>
             </TouchableOpacity>
@@ -437,7 +437,7 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
               style={[styles.sortButton, sortBy === 'role' && styles.activeSortButton]}
               onPress={() => toggleSort('role')}
             >
-              <Text style={styles.sortButtonText}>
+              <Text style={[styles.sortButtonText,sortBy === 'role' && {color:'white'}]}>
                 Role {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Text>
             </TouchableOpacity>
@@ -446,7 +446,7 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
               style={[styles.sortButton, sortBy === 'status' && styles.activeSortButton]}
               onPress={() => toggleSort('status')}
             >
-              <Text style={styles.sortButtonText}>
+              <Text style={[styles.sortButtonText,sortBy === 'status' && {color:'white'}]}>
                 Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Text>
             </TouchableOpacity>
@@ -455,7 +455,7 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
               style={[styles.sortButton, sortBy === 'group' && styles.activeSortButton]}
               onPress={() => toggleSort('group')}
             >
-              <Text style={styles.sortButtonText}>
+              <Text style={[styles.sortButtonText,sortBy === 'group' && {color:'white'}]}>
                 Group {sortBy === 'group' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Text>
             </TouchableOpacity>
