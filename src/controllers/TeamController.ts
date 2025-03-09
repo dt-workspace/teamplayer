@@ -6,6 +6,7 @@ import {
     updateTeamMember,
     deleteTeamMember,
     getTeamMembersByGroups,
+    deleteAll
   } from '@services/teamService';
   import { TeamMember, NewTeamMember } from '@models/TeamMember';
   import { ControllerResponse } from '../types/response';
@@ -99,6 +100,19 @@ import {
         return { success: true, data: members };
       } catch (error) {
         return { success: false, error: `Failed to get team members by groups: ${error}` };
+      }
+    }
+  
+    /**
+     * Deletes all team members for a user.
+     * @param userId - User ID
+     */
+    async deleteAllTeamMembers(userId: number): Promise<ControllerResponse<TeamMember[]>> {
+      try {
+        const members = await deleteAll(userId);
+        return { success: true, data: members, message: 'All team members deleted successfully' };
+      } catch (error) {
+        return { success: false, error: `Failed to delete all team members: ${error}` };
       }
     }
   }

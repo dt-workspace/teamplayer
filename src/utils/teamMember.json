@@ -1,0 +1,662 @@
+{
+  "data": [
+    {
+      "name": "Abdul Hamid",
+      "role": "Sales Executive",
+      "phone": "+91-8765432100",
+      "email": "abdul.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Abhishek Sharma",
+      "role": "Developer Executive",
+      "phone": "+91-8765432101",
+      "email": "abhishek.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Abhishek Lakhara",
+      "role": "Employee",
+      "phone": "+91-8765432102",
+      "email": "abhishekwebsenor35@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Akanksha Shrivastav",
+      "role": "Project Management",
+      "phone": "+91-8765432103",
+      "email": "akanksha.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Akshay Ameta",
+      "role": "Employee",
+      "phone": "+91-8765432104",
+      "email": "akshayameta.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Akshul Pahuja",
+      "role": "Digital Marketing",
+      "phone": "+91-8765432105",
+      "email": "websenor.akshul@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Anjali Koranga",
+      "role": "Sales Executive",
+      "phone": "+91-8765432106",
+      "email": "poorva.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Anuj Tomar",
+      "role": "Sales Executive",
+      "phone": "+91-8765432107",
+      "email": "anuj.tomar@websenor.com",
+      "status": "Free"
+    },
+    {
+      "name": "Arjun Singh Rajput",
+      "role": "Developer Executive",
+      "phone": "+91-8765432108",
+      "email": "arjun.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Asif Khan",
+      "role": "Sales Executive",
+      "phone": "+91-8765432109",
+      "email": "websenor.asif@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Bhagyaveer Singh rao",
+      "role": "Employee",
+      "phone": "+91-8765432110",
+      "email": "bhagyaveer.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Bhagyawardhan Singh",
+      "role": "Employee",
+      "phone": "+91-8765432111",
+      "email": "bhagyawardhan.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Bhumika W",
+      "role": "HR Executive",
+      "phone": "+91-8765432112",
+      "email": "bhumika.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Bipasha Purbia",
+      "role": "HR Executive",
+      "phone": "+91-8765432113",
+      "email": "bipasha.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Chetna Chauhan",
+      "role": "HR Manager",
+      "phone": "+91-8765432114",
+      "email": "chetnachouhan.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Chinmay Shrimali",
+      "role": "Digital Marketing",
+      "phone": "+91-8765432115",
+      "email": "chinmay99.digitalmarketing@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Chitra Malviya",
+      "role": "Sales Executive",
+      "phone": "+91-8765432116",
+      "email": "chitramalviya.ws@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Deepak Jain",
+      "role": "Sales Executive",
+      "phone": "+91-8765432117",
+      "email": "deepakjain.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Deepak Soni",
+      "role": "Accounts",
+      "phone": "+91-8765432118",
+      "email": "accounts@websenor.com",
+      "status": "Free"
+    },
+    {
+      "name": "Deepak Tiwari",
+      "role": "Developer Executive",
+      "phone": "+91-8765432119",
+      "email": "deepak.tiwari.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Deepak Paliwal",
+      "role": "Developer Executive",
+      "phone": "+91-8765432120",
+      "email": "deepakpaliwal.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Deepasha W",
+      "role": "HR Executive",
+      "phone": "+91-8765432121",
+      "email": "deepasha.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Disha W",
+      "role": "Sales Executive",
+      "phone": "+91-8765432122",
+      "email": "disha.websenor12@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Disha pamecha",
+      "role": "Employee",
+      "phone": "+91-8765432123",
+      "email": "websenor.disha@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Ganpat Nayak",
+      "role": "Sales Executive",
+      "phone": "+91-8765432124",
+      "email": "Ganpat.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Gaurav Panwar",
+      "role": "Developer Executive",
+      "phone": "+91-8765432125",
+      "email": "gauravpanwar.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Gourav Nainwaya",
+      "role": "Employee",
+      "phone": "+91-8765432126",
+      "email": "websenor.gouravnainwaya@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Himakshi choudhary",
+      "role": "Sales Executive",
+      "phone": "+91-8765432127",
+      "email": "himakshi.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Himanshu Sanadhya",
+      "role": "Project Management",
+      "phone": "+91-8765432128",
+      "email": "himanshuwebsenor3@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Imran Mir",
+      "role": "Developer Executive",
+      "phone": "+91-8765432129",
+      "email": "imran.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Imroz Sabri",
+      "role": "Developer Executive",
+      "phone": "+91-8765432130",
+      "email": "imroz.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Jaideep Kumawat",
+      "role": "Developer Executive",
+      "phone": "+91-8765432131",
+      "email": "jaideep.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Jay Sahu",
+      "role": "Developer Executive",
+      "phone": "+91-8765432132",
+      "email": "jaysahu2002.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Jyotsana Suthar",
+      "role": "Sales Executive",
+      "phone": "+91-8765432133",
+      "email": "Websenor.jyotsana@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "karan Raj",
+      "role": "Employee",
+      "phone": "+91-8765432134",
+      "email": "karanraj.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Kawaljeet Singh",
+      "role": "Employee",
+      "phone": "+91-8765432135",
+      "email": "websenor.kawaljeet@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Kinjal jain",
+      "role": "Employee",
+      "phone": "+91-8765432136",
+      "email": "kinjaljain.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Lalit Purbia",
+      "role": "Developer Executive",
+      "phone": "+91-8765432137",
+      "email": "lalitpurbia.ws@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Laxmi W",
+      "role": "HR Executive",
+      "phone": "+91-8765432138",
+      "email": "laxmimenariya.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Luvraj W",
+      "role": "Sales Executive",
+      "phone": "+91-8765432139",
+      "email": "luvraj.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Mahi Dadhich",
+      "role": "HR Executive",
+      "phone": "+91-8765432140",
+      "email": "mahi.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Manjula G",
+      "role": "HR Executive",
+      "phone": "+91-8765432141",
+      "email": "manjula.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "mansvee shah",
+      "role": "Employee",
+      "phone": "+91-8765432142",
+      "email": "mansvee.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Manu Gour",
+      "role": "Sales Manager",
+      "phone": "+91-8765432143",
+      "email": "manu.gour@websenor.in",
+      "status": "Free"
+    },
+    {
+      "name": "Mariyam sheikh larji",
+      "role": "Digital Marketing",
+      "phone": "+91-8765432144",
+      "email": "mariyamemantra@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Mazahir Attari",
+      "role": "Developer Executive",
+      "phone": "+91-8765432145",
+      "email": "websenor.mazahir@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Mohammed Abrar",
+      "role": "Employee",
+      "phone": "+91-8765432146",
+      "email": "abrar.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Mohit Kalal",
+      "role": "Employee",
+      "phone": "+91-8765432147",
+      "email": "mohit.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Namita Sharma",
+      "role": "Sales Executive",
+      "phone": "+91-8765432148",
+      "email": "namitasharma.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nayan Mehta",
+      "role": "Employee",
+      "phone": "+91-8765432149",
+      "email": "websenor.nayan@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Neeraj S.",
+      "role": "Sales Executive",
+      "phone": "+91-8765432150",
+      "email": "neerajsharma.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Neha Sharma",
+      "role": "Sales Executive",
+      "phone": "+91-8765432151",
+      "email": "alefiya.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Neha Nagda",
+      "role": "Developer Executive",
+      "phone": "+91-8765432152",
+      "email": "nehanagda.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nikhil Panchal",
+      "role": "Employee",
+      "phone": "+91-8765432153",
+      "email": "nikhilpanchal.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nikhil Mandia",
+      "role": "Developer Executive",
+      "phone": "+91-8765432154",
+      "email": "nikhil.websenor26@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nikita Nagda",
+      "role": "Employee",
+      "phone": "+91-8765432155",
+      "email": "nikita.emantra@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nikta Nagda",
+      "role": "Employee",
+      "phone": "+91-8765432156",
+      "email": "nikita.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nishant Sharma",
+      "role": "Employee",
+      "phone": "+91-8765432157",
+      "email": "nishant.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nishi Acharya",
+      "role": "Employee",
+      "phone": "+91-8765432158",
+      "email": "nishi.acharya@websenor.net",
+      "status": "Free"
+    },
+    {
+      "name": "Nishtha W",
+      "role": "HR Executive",
+      "phone": "+91-8765432159",
+      "email": "nishtha.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Nitesh Teli",
+      "role": "Developer Executive",
+      "phone": "+91-8765432160",
+      "email": "nitesh.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Prafull Singh Rao",
+      "role": "Developer Executive",
+      "phone": "+91-8765432161",
+      "email": "prafulls.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Prashant Yadav",
+      "role": "Sales Executive",
+      "phone": "+91-8765432162",
+      "email": "prashantyadavwebsenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Priyanshi Soni",
+      "role": "HR Executive",
+      "phone": "+91-8765432163",
+      "email": "priyanshi.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "priyanshu Upadhyay",
+      "role": "Employee",
+      "phone": "+91-8765432164",
+      "email": "priyanshu.websenor.in@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Richa Sinha",
+      "role": "Employee",
+      "phone": "+91-8765432165",
+      "email": "richasinha.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Ridhi Swami",
+      "role": "Employee",
+      "phone": "+91-8765432166",
+      "email": "ridhi.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Saheer Khan",
+      "role": "Developer Executive",
+      "phone": "+91-8765432167",
+      "email": "saheer.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Samuel R",
+      "role": "Sales Executive",
+      "phone": "+91-8765432168",
+      "email": "Samuel@websenorllc.com",
+      "status": "Free"
+    },
+    {
+      "name": "sandeep teli",
+      "role": "Employee",
+      "phone": "+91-8765432169",
+      "email": "sandeep.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "saniya chhipa",
+      "role": "Employee",
+      "phone": "+91-8765432170",
+      "email": "saniyachhipa.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "sanket Paliwal",
+      "role": "Digital Marketing",
+      "phone": "+91-8765432171",
+      "email": "sanket.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Sejal W",
+      "role": "HR Executive",
+      "phone": "+91-8765432172",
+      "email": "sejal.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Shifa W",
+      "role": "HR Executive",
+      "phone": "+91-8765432173",
+      "email": "shifawebsenor218@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Shivani Masram",
+      "role": "Employee",
+      "phone": "+91-8765432174",
+      "email": "shivaniwebsenor3@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Shubham Soni",
+      "role": "Sales Executive",
+      "phone": "+91-8765432175",
+      "email": "Shubham.soni786@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Shubham Tiwari",
+      "role": "Employee",
+      "phone": "+91-8765432176",
+      "email": "shubhamtiwari.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "somya Rameja",
+      "role": "Employee",
+      "phone": "+91-8765432177",
+      "email": "somya.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Sourabh Mathur",
+      "role": "Employee",
+      "phone": "+91-8765432178",
+      "email": "Sourabh.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Sufiyan Mohammad",
+      "role": "Developer Executive",
+      "phone": "+91-8765432179",
+      "email": "sufiyan.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Sunny Sachdev",
+      "role": "Project Management",
+      "phone": "+91-8765432180",
+      "email": "sunny.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Surinder Kumar",
+      "role": "Developer Executive",
+      "phone": "+91-8765432181",
+      "email": "surinder8945.ws@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Thanvendra Singh",
+      "role": "Employee",
+      "phone": "+91-8765432182",
+      "email": "thanvendra.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Tushar Rajora",
+      "role": "Developer Executive",
+      "phone": "+91-8765432183",
+      "email": "tusharwebsenor56@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Tushar Vaghela",
+      "role": "Developer Executive",
+      "phone": "+91-8765432184",
+      "email": "tusharwebsenor8@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Utkarsh Anthwal",
+      "role": "Employee",
+      "phone": "+91-8765432185",
+      "email": "utkarsh.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Vaibhav Gupta",
+      "role": "Developer Executive",
+      "phone": "+91-8765432186",
+      "email": "vaibhav.websenor04@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Victorious Sanjay",
+      "role": "Sales Executive",
+      "phone": "+91-8765432187",
+      "email": "hcsanjay.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Vimal Purbia",
+      "role": "Project Management",
+      "phone": "+91-8765432188",
+      "email": "Vimal.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Vineet Chauhan",
+      "role": "Sales Executive",
+      "phone": "+91-8765432189",
+      "email": "vineet.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Virendra Singh",
+      "role": "Project Management",
+      "phone": "+91-8765432190",
+      "email": "websenor.virendra@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "Visal NKR",
+      "role": "Sales Executive",
+      "phone": "+91-8765432191",
+      "email": "visalnkr.websenor@gmail.com",
+      "status": "Free"
+    },
+    {
+      "name": "WebSenor InfoTech",
+      "role": "Employee",
+      "phone": "+91-8765432192",
+      "email": "info@websenor.com",
+      "status": "Free"
+    },
+    {
+      "name": "Yogesh Vaishnav",
+      "role": "Developer Executive",
+      "phone": "+91-8765432193",
+      "email": "yogeshvaishnav.websenor@gmail.com",
+      "status": "Free"
+    }
+  ]
+}

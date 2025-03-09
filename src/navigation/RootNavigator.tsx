@@ -13,21 +13,32 @@ const RootStack = createStackNavigator<RootStackParamList>();
 export const RootNavigator: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [initialRouteName, setInitialRouteName] = useState<keyof RootStackParamList | undefined>('Onboarding');
 
   useEffect(() => {
-    const checkOnboarding = async () => {
+    const checkAppState = async () => {
       try {
-        const value = await AsyncStorage.getItem('onboardingComplete');
-        if (value === 'true') {
+        // Check if onboarding is complete
+        const onboardingValue = await AsyncStorage.getItem('onboardingComplete');
+        if (onboardingValue === 'true') {
           setIsOnboardingComplete(true);
+          setInitialRouteName('Onboarding')
+        }
+        
+        // Check if user is logged in
+        const currentUser = await AsyncStorage.getItem('currentUser');
+        if (currentUser) {
+          setInitialRouteName('Main')
+          setIsLoggedIn(true);
         }
       } catch (error) {
-        console.error('Error checking onboarding:', error);
+        console.error('Error checking app state:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    checkOnboarding();
+    checkAppState();
   }, []);
 
   if (isLoading) {
@@ -35,10 +46,10 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <RootStack.Navigator screenOptions={{ headerShown: false }}>
-      <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
-      <RootStack.Screen name="Auth" component={AuthNavigator} />
-      <RootStack.Screen name="Main" component={MainNavigator} />
+    <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRouteName}>
+      <RootStack.Screen name="Onboarding" component={OnboardingScreen} options={{headerShown:false}}/>
+      <RootStack.Screen name="Main" component={MainNavigator} options={{headerShown:false}}/>
+      <RootStack.Screen name="Auth" component={AuthNavigator} options={{headerShown:false}}/>
     </RootStack.Navigator>
   );
 };

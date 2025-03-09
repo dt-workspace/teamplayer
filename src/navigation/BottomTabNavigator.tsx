@@ -25,10 +25,10 @@ export const BottomTabNavigator: React.FC = () => {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Teams" component={TeamsScreen} />
-      <Tab.Screen name="Projects" component={ProjectsScreen} />
-      <Tab.Screen name="Tasks" component={TasksScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{headerShown:false}}/>
+      <Tab.Screen name="Teams" component={TeamsScreen} options={{headerShown:false}}/>
+      <Tab.Screen name="Projects" component={ProjectsScreen} options={{headerShown:false}}/>
+      <Tab.Screen name="Tasks" component={TasksScreen} options={{headerShown:false}}/>
     </Tab.Navigator>
   );
 };

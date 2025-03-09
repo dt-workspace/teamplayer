@@ -1,7 +1,7 @@
 // src/services/teamService.ts
 import { localDB } from '@database/db';
 import { teamMembers, TeamMember, NewTeamMember } from '@models/TeamMember';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray,and } from 'drizzle-orm';
 
 /**
  * Creates a new team member.
@@ -14,6 +14,18 @@ export const createTeamMember = async (
     member: Omit<NewTeamMember, 'userId'>
 ): Promise<TeamMember> => {
     const db = await localDB();
+    
+    // Check for existing team member with the same email
+    const existingMember = await db
+  .select()
+  .from(teamMembers)
+  .where(eq(teamMembers.email, member.email))
+  .limit(1);
+
+    if (existingMember.length > 0) {
+        throw new Error('A team member with this email already exists');
+    }
+
     const [newMember] = await db
         .insert(teamMembers)
         .values({ ...member, userId })
@@ -93,4 +105,15 @@ export const getTeamMembersByGroups = async (
                 groupIds.map((id) => JSON.stringify([id]))
             )
         );
+};
+
+/**
+ * Deletes all team members for a user.
+ * @param userId - User ID
+ * @returns Array of deleted team members
+ */
+export const deleteAll = async (userId: number): Promise<TeamMember[]> => {
+    const db = await localDB();
+    const members = await db.delete(teamMembers).where(eq(teamMembers.userId, userId)).returning();
+    return members;
 };

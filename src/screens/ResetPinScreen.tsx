@@ -1,21 +1,19 @@
-// src/screens/RegisterScreen.tsx
+// src/screens/ResetPinScreen.tsx
 import React, { useState } from 'react';
-import { View, Text,SafeAreaView, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '@navigation/types';
 import { AuthController } from '@controllers/AuthController';
-;
 
 type Props = {
-  navigation: StackNavigationProp<AuthStackParamList, 'Register'>;
+  navigation: StackNavigationProp<AuthStackParamList, 'ResetPin'>;
 };
 
-export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
+export const ResetPinScreen: React.FC<Props> = ({ navigation }) => {
   const [username, setUsername] = useState('');
-  const [pin, setPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
-  const [profileName, setProfileName] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -25,21 +23,24 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     // Username validation
     if (!username.trim()) {
       newErrors.username = 'Username is required';
-    } else if (username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+    }
+
+    // Recovery answer validation
+    if (!recoveryAnswer.trim()) {
+      newErrors.recoveryAnswer = 'Recovery answer is required';
     }
 
     // PIN validation
-    if (!pin) {
-      newErrors.pin = 'PIN is required';
-    } else if (pin.length < 4 || pin.length > 6) {
-      newErrors.pin = 'PIN must be 4-6 digits';
-    } else if (!/^\d+$/.test(pin)) {
-      newErrors.pin = 'PIN must contain only digits';
+    if (!newPin) {
+      newErrors.newPin = 'New PIN is required';
+    } else if (newPin.length < 4 || newPin.length > 6) {
+      newErrors.newPin = 'PIN must be 4-6 digits';
+    } else if (!/^\d+$/.test(newPin)) {
+      newErrors.newPin = 'PIN must contain only digits';
     }
 
     // Confirm PIN validation
-    if (pin !== confirmPin) {
+    if (newPin !== confirmPin) {
       newErrors.confirmPin = 'PINs do not match';
     }
 
@@ -47,25 +48,24 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = async () => {
+  const handleResetPin = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
       const authController = new AuthController();
-      const result = await authController.createUser(
+      const result = await authController.resetPin(
         username,
-        pin,
-        profileName || undefined,
-        recoveryAnswer || undefined
+        recoveryAnswer,
+        newPin
       );
 
       if (result.success) {
-        Alert.alert('Success', 'Account created successfully', [
-          { text: 'OK', onPress: () => navigation.replace('Login') }
+        Alert.alert('Success', 'PIN reset successfully', [
+          { text: 'OK', onPress: () => navigation.navigate('Login') }
         ]);
       } else {
-        Alert.alert('Error', result.error || 'Failed to create account');
+        Alert.alert('Error', result.error || 'Failed to reset PIN');
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
@@ -83,7 +83,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.container}>
-            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.title}>Reset PIN</Text>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Username</Text>
@@ -99,25 +99,37 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>PIN (4-6 digits)</Text>
+              <Text style={styles.label}>Recovery Answer</Text>
               <TextInput
-                style={[styles.input, errors.pin ? styles.inputError : null]}
-                placeholder="Enter PIN"
-                value={pin}
-                onChangeText={setPin}
-                keyboardType="numeric"
-                secureTextEntry
-                maxLength={6}
-                testID="pin-input"
+                style={[styles.input, errors.recoveryAnswer ? styles.inputError : null]}
+                placeholder="Enter recovery answer"
+                value={recoveryAnswer}
+                onChangeText={setRecoveryAnswer}
+                testID="recovery-answer-input"
               />
-              {errors.pin ? <Text style={styles.errorText}>{errors.pin}</Text> : null}
+              {errors.recoveryAnswer ? <Text style={styles.errorText}>{errors.recoveryAnswer}</Text> : null}
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm PIN</Text>
+              <Text style={styles.label}>New PIN (4-6 digits)</Text>
+              <TextInput
+                style={[styles.input, errors.newPin ? styles.inputError : null]}
+                placeholder="Enter new PIN"
+                value={newPin}
+                onChangeText={setNewPin}
+                keyboardType="numeric"
+                secureTextEntry
+                maxLength={6}
+                testID="new-pin-input"
+              />
+              {errors.newPin ? <Text style={styles.errorText}>{errors.newPin}</Text> : null}
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Confirm New PIN</Text>
               <TextInput
                 style={[styles.input, errors.confirmPin ? styles.inputError : null]}
-                placeholder="Confirm PIN"
+                placeholder="Confirm new PIN"
                 value={confirmPin}
                 onChangeText={setConfirmPin}
                 keyboardType="numeric"
@@ -128,35 +140,13 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               {errors.confirmPin ? <Text style={styles.errorText}>{errors.confirmPin}</Text> : null}
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Profile Name (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter profile name"
-                value={profileName}
-                onChangeText={setProfileName}
-                testID="profile-name-input"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Recovery Answer (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter recovery answer"
-                value={recoveryAnswer}
-                onChangeText={setRecoveryAnswer}
-                testID="recovery-answer-input"
-              />
-            </View>
-
             <TouchableOpacity
               style={styles.button}
-              onPress={handleRegister}
+              onPress={handleResetPin}
               disabled={isLoading}
-              testID="register-button"
+              testID="reset-pin-button"
             >
-              <Text style={styles.buttonText}>{isLoading ? 'Creating Account...' : 'Create Account'}</Text>
+              <Text style={styles.buttonText}>{isLoading ? 'Resetting PIN...' : 'Reset PIN'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -164,13 +154,12 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               onPress={() => navigation.goBack()}
               testID="back-to-login-button"
             >
-              <Text style={styles.linkText}>Already have an account? Login</Text>
+              <Text style={styles.linkText}>Back to Login</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-
   );
 };
 
