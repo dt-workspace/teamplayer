@@ -9,6 +9,7 @@ import {
   } from '@services/projectService';
   import { Project, NewProject } from '@models/Project';
   import { ControllerResponse } from '../types/response';
+import AsyncStorage from '@react-native-async-storage/async-storage';
   
   export class ProjectController {
     /**
@@ -99,6 +100,40 @@ import {
         return { success: true, data: project, message: 'Team members assigned successfully' };
       } catch (error) {
         return { success: false, error: `Failed to assign team members: ${error}` };
+      }
+    }
+
+    /**
+     * Gets all projects (wrapper for getProjectsByUser with current user).
+     * This is used by the ProjectsScreen.
+     */
+    async getAllProjects(): Promise<ControllerResponse<Project[]>> {
+      try {
+        const user = await AsyncStorage.getItem('currentUser');
+        const userId = user?.id; 
+        const projects = await getProjectsByUser(userId);
+        return { success: true, data: projects };
+      } catch (error) {
+        return { success: false, error: `Failed to get projects: ${error}` };
+      }
+    }
+
+    /**
+     * Updates project progress.
+     * @param id - Project ID
+     * @param progress - New progress value (0-100)
+     */
+    async updateProjectProgress(
+      id: number,
+      progress: number
+    ): Promise<ControllerResponse<Project>> {
+      try {
+        // Ensure progress is between 0 and 100
+        const validProgress = Math.max(0, Math.min(100, progress));
+        const project = await updateProject(id, { progress: validProgress });
+        return { success: true, data: project, message: 'Project progress updated successfully' };
+      } catch (error) {
+        return { success: false, error: `Failed to update project progress: ${error}` };
       }
     }
   }

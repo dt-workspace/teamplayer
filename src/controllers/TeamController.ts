@@ -10,6 +10,7 @@ import {
   } from '@services/teamService';
   import { TeamMember, NewTeamMember } from '@models/TeamMember';
   import { ControllerResponse } from '../types/response';
+import AsyncStorage from '@react-native-async-storage/async-storage';
   
   export class TeamController {
     /**
@@ -113,6 +114,29 @@ import {
         return { success: true, data: members, message: 'All team members deleted successfully' };
       } catch (error) {
         return { success: false, error: `Failed to delete all team members: ${error}` };
+      }
+    }
+
+    /**
+     * Gets all team members (wrapper for getTeamMembersByUser with current user).
+     * This is used by the ProjectsScreen and ProjectDetailScreen.
+     */
+    async getAllTeamMembers(): Promise<ControllerResponse<TeamMember[]>> {
+      try {
+        const userString = await AsyncStorage.getItem('currentUser');
+        console.log('User from AsyncStorage:', userString);
+        
+        // Parse the user string from AsyncStorage
+        const user = userString ? JSON.parse(userString) : null;
+        
+        // Get user ID from parsed object, or use a default (1) if not available
+        const userId = user?.id || 1; // Fallback to ID 1 if user not found
+        console.log('Using user ID:', userId);
+        
+        const members = await getTeamMembersByUser(userId);
+        return { success: true, data: members };
+      } catch (error) {
+        return { success: false, error: `Failed to get team members: ${error}` };
       }
     }
   }

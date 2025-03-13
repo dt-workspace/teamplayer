@@ -24,6 +24,7 @@ import * as TeamJSON from '../utils/teamMember.json';
 import Delete from '../assets/icons/delete';
 import Import from '../assets/icons/import';
 import { teamController } from '@controllers/index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Mock data for groups - in a real app, this would come from an API or store
 const MOCK_GROUPS = [
@@ -61,8 +62,10 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
   const fetchTeamMembers = useCallback(async () => {
     try {
       setIsLoading(true);
-      // In a real app, you would get the actual user ID from auth context/store
-      const userId = 1;
+      const userString = await AsyncStorage.getItem('currentUser');
+      const user = userString ? JSON.parse(userString) : null;
+      const userId = user?.id || 1; // Fallback to ID 1 if user not found
+      
       const response = await teamController.getTeamMembersByUser(userId);
 
       if (response.success && response.data) {
@@ -212,7 +215,9 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
   const handleAddEditMember = async (member: Omit<TeamMember, 'id' | 'userId'>) => {
     try {
       setIsLoading(true);
-      const userId = 1; // In a real app, get from auth context
+      
+      const user = await AsyncStorage.getItem('currentUser');
+        const userId = user?.id; 
 
       let response;
       if (selectedMember) {
@@ -327,7 +332,8 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
   // Handle CSV import
   const handleImportCSV = async () => {
     try {
-      const userId = 1; // In a real app, get from auth context
+      const user = await AsyncStorage.getItem('currentUser');
+        const userId = user?.id; 
       const members = TeamJSON.data
 
       let successCount = 0;
@@ -379,7 +385,8 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
                         onPress: async () => {
                           try {
                             setIsLoading(true);
-                            const userId = 1; // In a real app, get from auth context
+                            const user = await AsyncStorage.getItem('currentUser');
+                            const userId = user?.id; 
                             const response = await teamController.deleteAllTeamMembers(userId);
 
                             if (response.success) {
