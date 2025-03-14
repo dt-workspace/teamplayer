@@ -12,6 +12,8 @@ type TaskItemProps = {
   statusColor: string;
   onToggleExpansion: (taskId: number) => void;
   onUpdateTaskStatus: (taskId: number, newStatus: TaskStatus) => void;
+  onEditTask?: (task: PersonalTask) => void;
+  onDeleteTask?: (taskId: number) => void;
 };
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -20,6 +22,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   statusColor,
   onToggleExpansion,
   onUpdateTaskStatus,
+  onEditTask,
+  onDeleteTask,
 }) => {
   // Get task type icon
   const getTaskTypeIcon = (type: string) => {
@@ -28,6 +32,20 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       case 'Medium': return 'checkbox-intermediate';
       case 'Large': return 'checkbox-marked-circle-outline';
       default: return 'checkbox-blank-circle-outline';
+    }
+  };
+
+  // Handle edit task
+  const handleEditTask = () => {
+    if (onEditTask) {
+      onEditTask(task);
+    }
+  };
+
+  // Handle delete task
+  const handleDeleteTask = () => {
+    if (onDeleteTask) {
+      onDeleteTask(task.id);
     }
   };
 
@@ -106,6 +124,25 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           
           {/* Task Actions */}
           <View style={styles.taskActions}>
+            {/* Edit Button */}
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={handleEditTask}
+            >
+              <Icon name="pencil-outline" size={20} color={colors.info} />
+              <Text style={[styles.actionButtonText, { color: colors.info }]}>Edit</Text>
+            </TouchableOpacity>
+            
+            {/* Delete Button */}
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={handleDeleteTask}
+            >
+              <Icon name="delete-outline" size={20} color={colors.error} />
+              <Text style={[styles.actionButtonText, { color: colors.error }]}>Delete</Text>
+            </TouchableOpacity>
+            
+            {/* Status Change Buttons */}
             {task.status !== 'Completed' ? (
               <TouchableOpacity 
                 style={styles.actionButton}
@@ -168,33 +205,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   taskHeaderRight: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: spacing.xs,
   },
   taskTypeContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
   },
   taskType: {
     fontSize: typography.fontSizes.md,
     fontWeight: typography.fontWeights.medium,
     color: colors.text,
-    marginRight: spacing.sm,
+    flex: 1,
   },
   pointsBadge: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: borderRadius.xs,
+    borderRadius: borderRadius.round,
+    marginLeft: spacing.xs,
   },
   pointsBadgeText: {
     fontSize: typography.fontSizes.xs,
-    fontWeight: typography.fontWeights.medium,
+    fontWeight: typography.fontWeights.bold,
     color: colors.card,
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 2,
   },
   statusIndicator: {
     width: 8,
@@ -207,10 +245,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   taskDetails: {
-    padding: spacing.md,
-    backgroundColor: colors.background,
+    padding: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.divider,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
   },
   detailRow: {
     flexDirection: 'row',
@@ -219,12 +257,11 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
+    color: colors.text,
     marginLeft: spacing.xs,
   },
   notesContainer: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
   },
   notesText: {
     fontSize: typography.fontSizes.sm,
@@ -240,6 +277,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: spacing.md,
+    flexWrap: 'wrap',
   },
   actionButton: {
     flexDirection: 'row',
@@ -251,6 +289,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
     marginLeft: spacing.xs,
+    marginBottom: spacing.xs,
   },
   actionButtonText: {
     fontSize: typography.fontSizes.sm,

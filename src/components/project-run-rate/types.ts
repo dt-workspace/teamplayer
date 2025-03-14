@@ -20,6 +20,10 @@ export type ProjectRunRateProps = {
   tasks: Task[];
   onTaskAdded: (task: Omit<Task, 'id'>) => void;
   onTaskUpdated: (taskId: number, updates: Partial<Task>) => void;
+  onTaskDeleted?: (taskId: number) => void;
+  onTaskEdited?: (task: Task) => void;
+  selectedTask?: Task | null;
+  onTaskSelected?: (task: Task | null) => void;
 };
 
 export type MetricsData = {

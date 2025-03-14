@@ -6,6 +6,7 @@ import {
     getTasksByProject,
     updatePersonalTask,
     deletePersonalTask,
+    getTasksByMilestone,
     completePersonalTask,
   } from '@services/taskService';
   import { PersonalTask, NewPersonalTask } from '@models/PersonalTask';

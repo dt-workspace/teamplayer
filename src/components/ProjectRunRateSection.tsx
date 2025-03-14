@@ -20,6 +20,7 @@ import {
   ProjectRunRateProps,
   MetricsData 
 } from './project-run-rate/types';
+import { PersonalTask } from '@models/PersonalTask';
 
 export const ProjectRunRateSection: React.FC<ProjectRunRateProps> = ({
   projectId,
@@ -27,8 +28,11 @@ export const ProjectRunRateSection: React.FC<ProjectRunRateProps> = ({
   deadline,
   developerCount,
   tasks,
-  onTaskAdded,
   onTaskUpdated,
+  onTaskDeleted,
+  onTaskEdited,
+  selectedTask,
+  onTaskSelected
 }) => {
   // Reference for task form bottom sheet
   const taskFormRef = useRef<RBSheetTaskFormRef>(null);
@@ -54,6 +58,13 @@ export const ProjectRunRateSection: React.FC<ProjectRunRateProps> = ({
   useEffect(() => {
     calculateMetrics();
   }, [tasks, developerCount]);
+
+  // Open task form when selectedTask changes
+  useEffect(() => {
+    if (selectedTask) {
+      taskFormRef.current?.open();
+    }
+  }, [selectedTask]);
 
   const calculateMetrics = () => {
     // Calculate total and completed points
@@ -111,8 +122,6 @@ export const ProjectRunRateSection: React.FC<ProjectRunRateProps> = ({
     }
   };
 
-
-
   const handleUpdateTaskStatus = (taskId: number, newStatus: TaskStatus) => {
     const updates: Partial<Task> = { status: newStatus };
     
@@ -125,7 +134,24 @@ export const ProjectRunRateSection: React.FC<ProjectRunRateProps> = ({
     onTaskUpdated(taskId, updates);
   };
 
- 
+  const handleEditTask = (task: PersonalTask) => {
+    if (onTaskEdited) {
+      onTaskEdited(task as unknown as Task);
+    }
+  };
+
+  const handleDeleteTask = (taskId: number) => {
+    if (onTaskDeleted) {
+      onTaskDeleted(taskId);
+    }
+  };
+
+  const handleTaskFormClose = () => {
+    if (onTaskSelected) {
+      onTaskSelected(null);
+    }
+    taskFormRef.current?.close();
+  };
 
   return (
     <View style={styles.section}>
@@ -155,7 +181,9 @@ export const ProjectRunRateSection: React.FC<ProjectRunRateProps> = ({
       {/* Task List */}
       <TaskList 
         tasks={tasks} 
-        onUpdateTaskStatus={handleUpdateTaskStatus} 
+        onUpdateTaskStatus={handleUpdateTaskStatus}
+        onEditTask={handleEditTask}
+        onDeleteTask={handleDeleteTask}
       />
       
       {/* Task Form Bottom Sheet */}
@@ -163,18 +191,11 @@ export const ProjectRunRateSection: React.FC<ProjectRunRateProps> = ({
         ref={taskFormRef}
         projectId={projectId}
         userId={3} // TODO: Get from auth context
-        onClose={() => taskFormRef.current?.close()}
+        onClose={handleTaskFormClose}
         onSubmit={() => {
-          // Refresh tasks after successful creation
-          const task = {
-            type: newTask.type,
-            status: newTask.status,
-            points: getPointsForTaskType(newTask.type),
-            completionDate: newTask.status === 'Completed' ? new Date().toISOString() : undefined,
-          };
-          onTaskAdded(task);
-          taskFormRef.current?.close();
+          handleTaskFormClose();
         }}
+        initialTask={selectedTask as unknown as PersonalTask}
       />
     </View>
   );
@@ -192,7 +213,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
+    fontWeight: 'bold',
     color: colors.text,
   },
   addTaskButton: {
@@ -203,7 +224,7 @@ const styles = StyleSheet.create({
   addTaskButtonText: {
     color: colors.primary,
     fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
+    fontWeight: 'medium',
     marginLeft: spacing.xs,
   },
 });

@@ -48,6 +48,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
   const [tags, setTags] = useState<string[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [userId, setUserId] = useState<number>(1); // Default user ID, should be replaced with actual logged-in user ID
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
   
   // Create an instance of TaskController
   const taskController = new TaskController();
@@ -312,79 +313,6 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
     }, 300);
   };
 
-  // Handle updating project progress
-  const handleUpdateProgress = async (newProgress: number) => {
-    if (!project) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // Update the project with new progress
-      const response = await projectController.updateProject(route.params.projectId, {
-        ...project,
-        progress: newProgress
-      });
-      
-      if (response.success) {
-        setProject(prev => prev ? { ...prev, progress: newProgress } : null);
-      } else {
-        Alert.alert('Error', response.error || 'Failed to update project progress');
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle adding a task to the project
-  const handleAddTask = async (task: any) => {
-    try {
-      // Create a new task with the project ID
-      const newTask = {
-        name: `${task.type} Task`,
-        dueDate: new Date().toISOString(),
-        priority: 'Medium',
-        status: task.status,
-        taskType: task.type,
-        points: task.points,
-        notes: '',
-        projectId: route.params.projectId
-      };
-      
-      // Save the task to the database
-      const response = await taskController.createPersonalTask(1, newTask); // Using a default user ID of 1
-      
-      if (response.success && response.data) {
-        // Add the new task to the local state
-        setTasks(prev => [...prev, response.data]);
-      } else {
-        console.error('Failed to create task:', response.error);
-      }
-    } catch (error) {
-      console.error('Error creating task:', error);
-    }
-  };
-  
-  // Handle adding a personal task to the project's run rate calculations
-  const handleAddPersonalTaskToRunRate = async (personalTask: any) => {
-    if (personalTask.projectId === route.params.projectId && personalTask.runRateValues) {
-      // Create a run rate task from the personal task
-      const runRateTask = {
-        id: Date.now(),
-        type: personalTask.runRateValues.type,
-        status: personalTask.runRateValues.status,
-        points: personalTask.runRateValues.points,
-        completionDate: personalTask.runRateValues.status === 'Completed' ? new Date().toISOString() : undefined,
-        personalTaskId: personalTask.id // Reference to the personal task
-      };
-      
-      setTasks(prev => [...prev, runRateTask]);
-      // In a real app, you would save this to the database
-    }
-  };
-
   // Handle updating a task
   const handleUpdateTask = async (taskId: number, updates: any) => {
     try {
@@ -410,6 +338,45 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
     } catch (error) {
       console.error('Error updating task:', error);
     }
+  };
+
+  // Handle deleting a task
+  const handleDeleteTask = async (taskId: number) => {
+    try {
+      // Confirm deletion with the user
+      Alert.alert(
+        'Confirm Delete',
+        'Are you sure you want to delete this task?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              // Delete the task from the database
+              const response = await taskController.deletePersonalTask(taskId);
+              
+              if (response.success) {
+                // Remove the task from the local state
+                setTasks(prev => prev.filter(task => task.id !== taskId));
+                Alert.alert('Success', 'Task deleted successfully');
+              } else {
+                Alert.alert('Error', response.error || 'Failed to delete task');
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      Alert.alert('Error', 'An unexpected error occurred while deleting the task');
+    }
+  };
+
+  // Handle editing a task
+  const handleEditTask = (task: any) => {
+    setSelectedTask(task);
+    // The actual editing will be handled by the RBSheetTaskForm in ProjectRunRateSection
   };
 
   if (isLoading) {
@@ -444,19 +411,23 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         <ProjectDetails project={project} tags={tags} />
         
+        <MilestoneSection 
+          projectId={project.id}
+          userId={userId}
+        />
+        
         <ProjectRunRateSection 
           projectId={project.id}
           startDate={project.startDate}
           deadline={project.deadline}
           developerCount={assignedMembers.length}
           tasks={tasks}
-          onTaskAdded={handleAddTask}
+          onTaskAdded={()=>{}}
           onTaskUpdated={handleUpdateTask}
-        />
-        
-        <MilestoneSection 
-          projectId={project.id}
-          userId={userId}
+          onTaskDeleted={handleDeleteTask}
+          onTaskEdited={handleEditTask}
+          selectedTask={selectedTask}
+          onTaskSelected={setSelectedTask}
         />
         
         <TeamAssignmentSection 

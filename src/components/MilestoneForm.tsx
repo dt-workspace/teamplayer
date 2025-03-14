@@ -16,8 +16,16 @@ interface MilestoneFormProps {
 const MilestoneForm: React.FC<MilestoneFormProps> = ({ milestone, onSave, onCancel }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [startDate, setStartDate] = useState(new Date());
   const [deadline, setDeadline] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [paymentDate, setPaymentDate] = useState<Date | null>(null);
+  const [paymentPercentage, setPaymentPercentage] = useState('');
+  const [weeklyMeetingDay, setWeeklyMeetingDay] = useState<string | null>(null);
+  
+  // Date picker states
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showDeadlinePicker, setShowDeadlinePicker] = useState(false);
+  const [showPaymentDatePicker, setShowPaymentDatePicker] = useState(false);
   
   // Status dropdown state
   const [statusOpen, setStatusOpen] = useState(false);
@@ -28,40 +36,106 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ milestone, onSave, onCanc
     { label: 'Completed', value: 'Completed' },
     { label: 'Delayed', value: 'Delayed' },
   ]);
+  
+  // Weekly meeting day dropdown state
+  const [meetingDayOpen, setMeetingDayOpen] = useState(false);
+  const [meetingDayItems, setMeetingDayItems] = useState([
+    { label: 'Monday', value: 'Monday' },
+    { label: 'Tuesday', value: 'Tuesday' },
+    { label: 'Wednesday', value: 'Wednesday' },
+    { label: 'Thursday', value: 'Thursday' },
+    { label: 'Friday', value: 'Friday' },
+    { label: 'Saturday', value: 'Saturday' },
+    { label: 'Sunday', value: 'Sunday' },
+  ]);
 
   useEffect(() => {
     if (milestone) {
       setName(milestone.name);
       setDescription(milestone.description || '');
+      setStartDate(new Date(milestone.startDate));
       setDeadline(new Date(milestone.deadline));
       setStatus(milestone.status || 'Not Started');
+      
+      // Set optional fields if they exist
+      if (milestone.paymentDate) {
+        setPaymentDate(new Date(milestone.paymentDate));
+      }
+      if (milestone.paymentPercentage) {
+        setPaymentPercentage(milestone.paymentPercentage.toString());
+      }
+      if (milestone.weeklyMeetingDay) {
+        setWeeklyMeetingDay(milestone.weeklyMeetingDay);
+      }
     } else {
       // Default values for new milestone
+      const today = new Date();
       setName('');
       setDescription('');
-      setDeadline(new Date());
+      setStartDate(today);
+      
+      // Set deadline to 2 weeks from today by default
+      const twoWeeksLater = new Date(today);
+      twoWeeksLater.setDate(today.getDate() + 14);
+      setDeadline(twoWeeksLater);
+      
+      setPaymentDate(null);
+      setPaymentPercentage('');
+      setWeeklyMeetingDay(null);
       setStatus('Not Started');
     }
   }, [milestone]);
 
-  const handleDateChange = (event, selectedDate) => {
+  const handleStartDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || startDate;
+    setShowStartDatePicker(false);
+    setStartDate(currentDate);
+  };
+
+  const handleDeadlineChange = (event, selectedDate) => {
     const currentDate = selectedDate || deadline;
-    setShowDatePicker(false);
+    setShowDeadlinePicker(false);
     setDeadline(currentDate);
+  };
+
+  const handlePaymentDateChange = (event, selectedDate) => {
+    setShowPaymentDatePicker(false);
+    if (selectedDate) {
+      setPaymentDate(selectedDate);
+    }
   };
 
   const handleSubmit = () => {
     if (!name.trim()) {
-      Alert.alert('Please enter a milestone name');
+      Alert.alert('Error', 'Please enter a milestone name');
+      return;
+    }
+
+    if (startDate > deadline) {
+      Alert.alert('Error', 'Start date cannot be after deadline');
       return;
     }
 
     const milestoneData: Partial<Milestone> = {
       name,
       description: description.trim() || undefined,
+      startDate: startDate.toISOString(),
       deadline: deadline.toISOString(),
       status: status as 'Not Started' | 'In Progress' | 'Completed' | 'Delayed',
     };
+
+    // Add optional fields if they have values
+    if (paymentDate) {
+      milestoneData.paymentDate = paymentDate.toISOString();
+    }
+    
+    if (paymentPercentage && !isNaN(parseFloat(paymentPercentage))) {
+      milestoneData.paymentPercentage = parseFloat(paymentPercentage);
+    }
+    
+    if (weeklyMeetingDay) {
+      milestoneData.weeklyMeetingDay = weeklyMeetingDay;
+    }
 
     onSave(milestoneData);
   };
@@ -93,21 +167,86 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ milestone, onSave, onCanc
       </View>
 
       <View style={styles.formGroup}>
+        <Text style={styles.label}>Start Date *</Text>
+        <TouchableOpacity 
+          style={styles.datePickerButton} 
+          onPress={() => setShowStartDatePicker(true)}
+        >
+          <Text style={styles.dateText}>{dayjs(startDate).format('MMM D, YYYY')}</Text>
+        </TouchableOpacity>
+        {showStartDatePicker && (
+          <DateTimePicker
+            value={startDate}
+            mode="date"
+            display="default"
+            onChange={handleStartDateChange}
+          />
+        )}
+      </View>
+
+      <View style={styles.formGroup}>
         <Text style={styles.label}>Deadline *</Text>
         <TouchableOpacity 
           style={styles.datePickerButton} 
-          onPress={() => setShowDatePicker(true)}
+          onPress={() => setShowDeadlinePicker(true)}
         >
-          <Text style={styles.dateText}>{dayjs(deadline).format('MMM d, yyyy')}</Text>
+          <Text style={styles.dateText}>{dayjs(deadline).format('MMM D, YYYY')}</Text>
         </TouchableOpacity>
-        {showDatePicker && (
+        {showDeadlinePicker && (
           <DateTimePicker
             value={deadline}
             mode="date"
             display="default"
-            onChange={handleDateChange}
+            onChange={handleDeadlineChange}
           />
         )}
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Payment Date</Text>
+        <TouchableOpacity 
+          style={styles.datePickerButton} 
+          onPress={() => setShowPaymentDatePicker(true)}
+        >
+          <Text style={styles.dateText}>
+            {paymentDate ? dayjs(paymentDate).format('MMM D, YYYY') : 'Select payment date (optional)'}
+          </Text>
+        </TouchableOpacity>
+        {showPaymentDatePicker && (
+          <DateTimePicker
+            value={paymentDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={handlePaymentDateChange}
+          />
+        )}
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Payment Percentage</Text>
+        <TextInput
+          style={styles.input}
+          value={paymentPercentage}
+          onChangeText={setPaymentPercentage}
+          placeholder="e.g., 25 (for 25%)"
+          keyboardType="numeric"
+        />
+      </View>
+
+      <View style={[styles.formGroup, { zIndex: 2000 }]}>
+        <Text style={styles.label}>Weekly Meeting Day</Text>
+        <DropDownPicker
+          open={meetingDayOpen}
+          value={weeklyMeetingDay}
+          items={meetingDayItems}
+          setOpen={setMeetingDayOpen}
+          setValue={setWeeklyMeetingDay}
+          setItems={setMeetingDayItems}
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownContainer}
+          placeholder="Select meeting day (optional)"
+          listMode="SCROLLVIEW"
+        />
       </View>
 
       <View style={[styles.formGroup, { zIndex: 1000 }]}>
@@ -192,6 +331,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 24,
+    marginBottom: 24,
   },
   saveButton: {
     backgroundColor: '#2196F3',

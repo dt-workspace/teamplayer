@@ -4,12 +4,14 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import TaskForm from './TaskForm';
 import { colors, spacing, borderRadius } from '@constants/theme';
+import { PersonalTask } from '@models/PersonalTask';
 
 type RBSheetTaskFormProps = {
   projectId: number;
   userId: number;
   onSubmit: () => void;
   onClose: () => void;
+  initialTask?: PersonalTask | null;
 };
 
 export type RBSheetTaskFormRef = {
@@ -18,7 +20,7 @@ export type RBSheetTaskFormRef = {
 };
 
 export const RBSheetTaskForm = forwardRef<RBSheetTaskFormRef, RBSheetTaskFormProps>(
-  ({ projectId, userId, onSubmit, onClose }, ref) => {
+  ({ projectId, userId, onSubmit, onClose, initialTask }, ref) => {
     const rbSheetRef = useRef<RBSheet>(null);
 
     useImperativeHandle(ref, () => ({
@@ -78,6 +80,7 @@ export const RBSheetTaskForm = forwardRef<RBSheetTaskFormRef, RBSheetTaskFormPro
                 rbSheetRef.current?.close();
               }}
               onSuccess={onSubmit}
+              initialTask={initialTask}
             />
           </ScrollView>
         </View>

@@ -8,7 +8,7 @@ const ENCRYPTION_KEY = 'your-secure-key-32-chars-long-here';
 /**
  * Singleton class to manage the SQLite database connection and Drizzle ORM instance.
  */
-class Database {
+export class Database {
   private static instance: Database | null = null;
   private dbInstance: DB | null = null;
   private drizzleInstance: OPSQLiteDatabase | null = null;
@@ -56,11 +56,30 @@ class Database {
     console.log('Database reset completed');
   }
 
-  public async getDBInsstance(): Promise<DB> {
+  /**
+   * Gets the raw DB instance for migrations and direct SQL operations.
+   * @returns {Promise<DB>} The DB instance
+   */
+  public async getDBInstance(): Promise<DB> {
     if (!this.dbInstance) {
       throw new Error('Database instance not initialized');
     }
     return this.dbInstance;
+  }
+
+  /**
+   * Runs a migration function.
+   * @param {Function} migrationFn - The migration function to run
+   * @returns {Promise<void>}
+   */
+  public async runMigration(migrationFn: () => Promise<void>): Promise<void> {
+    try {
+      await migrationFn();
+      console.log('Migration completed successfully');
+    } catch (error) {
+      console.error('Migration failed:', error);
+      throw error;
+    }
   }
 
   /**
@@ -160,7 +179,11 @@ class Database {
         user_id INTEGER NOT NULL,
         project_id INTEGER NOT NULL,
         name TEXT NOT NULL,
+        start_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         deadline TEXT NOT NULL,
+        payment_date TEXT,
+        payment_percentage REAL,
+        weekly_meeting_day TEXT CHECK (weekly_meeting_day IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')),
         description TEXT CHECK (length(description) <= 500),
         status TEXT DEFAULT 'Not Started' CHECK (status IN ('Not Started', 'In Progress', 'Completed', 'Delayed')),
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

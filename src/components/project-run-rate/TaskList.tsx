@@ -6,13 +6,21 @@ import { colors, spacing, typography, borderRadius, elevation } from '@constants
 import { Task, TaskStatus } from './types';
 import { SearchBar } from './SearchBar';
 import { TaskItem } from './TaskItem';
+import { PersonalTask } from '@models/PersonalTask';
 
 type TaskListProps = {
   tasks: Task[];
   onUpdateTaskStatus: (taskId: number, newStatus: TaskStatus) => void;
+  onEditTask?: (task: PersonalTask) => void;
+  onDeleteTask?: (taskId: number) => void;
 };
 
-export const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTaskStatus }) => {
+export const TaskList: React.FC<TaskListProps> = ({ 
+  tasks, 
+  onUpdateTaskStatus,
+  onEditTask,
+  onDeleteTask
+}) => {
   // State to track which tasks are expanded
   const [expandedTaskIds, setExpandedTaskIds] = useState<number[]>([]);
   // State for filtering tasks
@@ -76,6 +84,20 @@ export const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTaskStatus })
     setSearchQuery('');
   };
 
+  // Handle edit task
+  const handleEditTask = (task: PersonalTask) => {
+    if (onEditTask) {
+      onEditTask(task);
+    }
+  };
+
+  // Handle delete task
+  const handleDeleteTask = (taskId: number) => {
+    if (onDeleteTask) {
+      onDeleteTask(taskId);
+    }
+  };
+
   // Render a single task item using the extracted TaskItem component
   const renderTaskItem = ({ item }: { item: Task }) => {
     const isExpanded = expandedTaskIds.includes(item.id);
@@ -83,11 +105,13 @@ export const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTaskStatus })
     
     return (
       <TaskItem
-        task={item}
+        task={item as unknown as PersonalTask}
         isExpanded={isExpanded}
         statusColor={statusColor}
         onToggleExpansion={toggleTaskExpansion}
         onUpdateTaskStatus={onUpdateTaskStatus}
+        onEditTask={handleEditTask}
+        onDeleteTask={handleDeleteTask}
       />
     );
   };
@@ -167,7 +191,7 @@ const styles = StyleSheet.create({
   },
   tasksTitle: {
     fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.semibold,
+    fontWeight: 'semibold',
     color: colors.text,
   },
   taskCountContainer: {
@@ -181,7 +205,7 @@ const styles = StyleSheet.create({
   taskCount: {
     color: colors.card,
     fontSize: typography.fontSizes.xs,
-    fontWeight: typography.fontWeights.bold,
+    fontWeight: 'bold',
   },
   filterContainer: {
     flexDirection: 'row',
@@ -205,7 +229,7 @@ const styles = StyleSheet.create({
   },
   filterButtonTextActive: {
     color: colors.card,
-    fontWeight: typography.fontWeights.medium,
+    fontWeight: 'medium',
   },
   taskList: {
     maxHeight: 400,
@@ -331,18 +355,19 @@ const styles = StyleSheet.create({
   },
   emptyTasksContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.xl,
   },
   emptyTasksText: {
     fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
+    fontWeight: 'medium',
+    color: colors.textSecondary,
     marginTop: spacing.md,
   },
   emptyTasksSubtext: {
     fontSize: typography.fontSizes.sm,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
     textAlign: 'center',
+    marginTop: spacing.xs,
   },
 });
