@@ -3,6 +3,7 @@ import {
     createPersonalTask,
     getPersonalTaskById,
     getPersonalTasksByUser,
+    getTasksByProject,
     updatePersonalTask,
     deletePersonalTask,
     completePersonalTask,
@@ -21,10 +22,66 @@ import {
       task: Omit<NewPersonalTask, 'userId'>
     ): Promise<ControllerResponse<PersonalTask>> {
       try {
+        if (!userId) {
+          return { success: false, error: 'User ID is required' };
+        }
+
+        if (!task) {
+          return { success: false, error: 'Task data is required' };
+        }
+
+        // Validate required fields
+        const requiredFields = ['name', 'dueDate', 'priority', 'status', 'taskType', 'points'];
+        for (const field of requiredFields) {
+          if (!task[field]) {
+            return { success: false, error: `${field} is required` };
+          }
+        }
+
         const newTask = await createPersonalTask(userId, task);
         return { success: true, data: newTask, message: 'Task created successfully' };
       } catch (error) {
-        return { success: false, error: `Failed to create task: ${error}` };
+        console.error('Error in TaskController.createPersonalTask:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        return { success: false, error: errorMessage };
+      }
+    }
+    
+    /**
+     * Gets all tasks for a project.
+     * @param projectId - Project ID
+     */
+    async getTasksByProject(projectId: number): Promise<ControllerResponse<PersonalTask[]>> {
+      try {
+        if (!projectId) {
+          return { success: false, error: 'Project ID is required' };
+        }
+        
+        const tasks = await getTasksByProject(projectId);
+        return { success: true, data: tasks };
+      } catch (error) {
+        console.error('Error in TaskController.getTasksByProject:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        return { success: false, error: errorMessage };
+      }
+    }
+
+    /**
+     * Gets all tasks for a milestone.
+     * @param milestoneId - Milestone ID
+     */
+    async getTasksByMilestone(milestoneId: number): Promise<ControllerResponse<PersonalTask[]>> {
+      try {
+        if (!milestoneId) {
+          return { success: false, error: 'Milestone ID is required' };
+        }
+        
+        const tasks = await getTasksByMilestone(milestoneId);
+        return { success: true, data: tasks };
+      } catch (error) {
+        console.error('Error in TaskController.getTasksByMilestone:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        return { success: false, error: errorMessage };
       }
     }
   

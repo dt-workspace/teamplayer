@@ -23,7 +23,7 @@ import { TeamsStackParamList } from './TeamMemberDetailScreen';
 import * as TeamJSON from '../utils/teamMember.json';
 import Delete from '../assets/icons/delete';
 import Import from '../assets/icons/import';
-import { teamController } from '@controllers/index';
+import { authController, teamController } from '@controllers/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Mock data for groups - in a real app, this would come from an API or store
@@ -62,11 +62,12 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
   const fetchTeamMembers = useCallback(async () => {
     try {
       setIsLoading(true);
-      const userString = await AsyncStorage.getItem('currentUser');
-      const user = userString ? JSON.parse(userString) : null;
-      const userId = user?.id || 1; // Fallback to ID 1 if user not found
+      const user = await authController.getCurrentUser();
+      if(!user){
+        Alert.alert('Error', 'User not found');
+      }
       
-      const response = await teamController.getTeamMembersByUser(userId);
+      const response = await teamController.getTeamMembersByUser(user?.id);
 
       if (response.success && response.data) {
         setTeamMembers(response.data);
@@ -216,8 +217,10 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
     try {
       setIsLoading(true);
       
-      const user = await AsyncStorage.getItem('currentUser');
-        const userId = user?.id; 
+      const user = await authController.getCurrentUser();
+      if(!user){
+        Alert.alert('Error', 'User not found');
+      }
 
       let response;
       if (selectedMember) {
@@ -225,7 +228,7 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
         response = await teamController.updateTeamMember(selectedMember.id, member);
       } else {
         // Add new member
-        response = await teamController.createTeamMember(userId, member);
+        response = await teamController.createTeamMember(user?.id, member);
       }
 
       if (response.success) {
@@ -332,8 +335,10 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
   // Handle CSV import
   const handleImportCSV = async () => {
     try {
-      const user = await AsyncStorage.getItem('currentUser');
-        const userId = user?.id; 
+      const user = await authController.getCurrentUser();
+      if(!user){
+        Alert.alert('Error', 'User not found');
+      }
       const members = TeamJSON.data
 
       let successCount = 0;
@@ -343,7 +348,7 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
       for (const member of members) {
         
 
-        const response = await teamController.createTeamMember(userId, member);
+        const response = await teamController.createTeamMember(user?.id, member);
         if (response.success) {
           successCount++;
         } else {
@@ -385,9 +390,11 @@ export const TeamsScreen: React.FC<TeamsScreenProps> = ({ navigation, route }) =
                         onPress: async () => {
                           try {
                             setIsLoading(true);
-                            const user = await AsyncStorage.getItem('currentUser');
-                            const userId = user?.id; 
-                            const response = await teamController.deleteAllTeamMembers(userId);
+                            const user = await authController.getCurrentUser();
+                            if(!user){
+                              Alert.alert('Error', 'User not found');
+                            }
+                            const response = await teamController.deleteAllTeamMembers(user?.id);
 
                             if (response.success) {
                               fetchTeamMembers();

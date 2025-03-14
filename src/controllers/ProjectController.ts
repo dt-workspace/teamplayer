@@ -10,6 +10,8 @@ import {
   import { Project, NewProject } from '@models/Project';
   import { ControllerResponse } from '../types/response';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authController } from '.';
+import { Alert } from 'react-native';
   
   export class ProjectController {
     /**
@@ -109,9 +111,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
      */
     async getAllProjects(): Promise<ControllerResponse<Project[]>> {
       try {
-        const user = await AsyncStorage.getItem('currentUser');
-        const userId = user?.id; 
-        const projects = await getProjectsByUser(userId);
+        const user = await authController.getCurrentUser();
+        if(!user){
+          Alert.alert('Error', 'User not found');
+        }
+        const projects = await getProjectsByUser(user?.id);
         return { success: true, data: projects };
       } catch (error) {
         return { success: false, error: `Failed to get projects: ${error}` };

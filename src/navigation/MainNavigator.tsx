@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { MainTabParamList } from './types';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { TeamMemberDetailScreen, TeamsStackParamList } from '@screens/TeamMemberDetailScreen';
+import { ProjectDetailScreen } from '@screens/ProjectDetailScreen';
 
 const MainStack = createStackNavigator();
 const TeamsStack = createStackNavigator<TeamsStackParamList>();
@@ -20,6 +21,11 @@ const TeamsNavigator = () => {
       <TeamsStack.Screen 
         name="TeamMemberDetail" 
         component={TeamMemberDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <TeamsStack.Screen
+        name="ProjectDetailScreen"
+        component={ProjectDetailScreen}
         options={{ headerShown: false }}
       />
     </TeamsStack.Navigator>

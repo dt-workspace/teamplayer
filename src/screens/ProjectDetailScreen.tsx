@@ -2,26 +2,30 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
   SafeAreaView,
+  Text,
+  TouchableOpacity,
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ProjectsStackParamList } from './ProjectsScreen';
 import { Project } from '@models/Project';
 import { TeamMember } from '@models/TeamMember';
-import { ProjectController } from '@controllers/ProjectController';
-import { TeamController } from '@controllers/TeamController';
 import { RBSheetProjectForm, RBSheetProjectFormRef } from '@components/RBSheetProjectForm';
-import { colors, spacing, typography, elevation, borderRadius } from '@constants/theme';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import { colors, spacing, typography } from '@constants/theme';
 import { projectController, teamController } from '@controllers/index';
+import { TaskController } from '@controllers/TaskController';
+
+// Import the new components
+import { ProjectHeader } from '@components/ProjectHeader';
+import { ProjectDetails } from '@components/ProjectDetails';
+import { TeamAssignmentSection } from '@components/TeamAssignmentSection';
+import { ProjectRunRateSection } from '@components/ProjectRunRateSection';
+import  MilestoneSection  from '@components/MilestoneSection';
 
 type ProjectDetailScreenProps = {
   route: RouteProp<ProjectsStackParamList, 'ProjectDetail'>;
@@ -35,7 +39,6 @@ type AssignedMember = {
 };
 
 export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route, navigation }) => {
-  const { projectId } = route.params;
   const [project, setProject] = useState<Project | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [assignedMembers, setAssignedMembers] = useState<AssignedMember[]>([]);
@@ -43,18 +46,40 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
   const [isLoading, setIsLoading] = useState(true);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [userId, setUserId] = useState<number>(1); // Default user ID, should be replaced with actual logged-in user ID
+  
+  // Create an instance of TaskController
+  const taskController = new TaskController();
   
   const projectFormRef = useRef<RBSheetProjectFormRef>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchProjectDetails();
     fetchTeamMembers();
-  }, [projectId]);
+    fetchProjectTasks();
+  }, [route.params.projectId]);
+  
+  // Fetch tasks for the project
+  const fetchProjectTasks = async () => {
+    try {
+      const response = await taskController.getTasksByProject(route.params.projectId);
+      
+      if (response.success && response.data) {
+        setTasks(response.data);
+      } else {
+        console.error('Failed to fetch project tasks:', response.error);
+      }
+    } catch (error) {
+      console.error('Error fetching project tasks:', error);
+    }
+  };
 
   const fetchProjectDetails = async () => {
     try {
       setIsLoading(true);
-      const response = await projectController.getProjectById(projectId);
+      const response = await projectController.getProjectById(route.params.projectId);
       
       if (response.success && response.data) {
         setProject(response.data);
@@ -104,22 +129,46 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
     }
   };
 
+  // Effect to populate memberData and availableMembers when teamMembers or assignedMembers change
   useEffect(() => {
-    // Match assigned member IDs with full team member data
-    if (teamMembers.length > 0 && assignedMembers.length > 0) {
-      const updatedAssignedMembers = assignedMembers.map(assigned => ({
-        ...assigned,
-        memberData: teamMembers.find(member => member.id === assigned.id)
-      }));
-      setAssignedMembers(updatedAssignedMembers);
+    if (teamMembers.length > 0) {
+      // Match assigned member IDs with full team member data
+      if (assignedMembers.length > 0) {
+        const updatedAssignedMembers = assignedMembers.map(assigned => {
+          // Only update memberData if it's not already set
+          if (!assigned.memberData) {
+            return {
+              ...assigned,
+              memberData: teamMembers.find(member => member.id === assigned.id)
+            };
+          }
+          return assigned;
+        });
+        
+        // Only update state if there are changes
+        const needsUpdate = updatedAssignedMembers.some(
+          (member, index) => member.memberData !== assignedMembers[index].memberData
+        );
+        
+        if (needsUpdate) {
+          setAssignedMembers(updatedAssignedMembers);
+        }
+      }
       
       // Filter out already assigned members for the available members list
       const assignedIds = assignedMembers.map(member => member.id);
       setAvailableMembers(teamMembers.filter(member => !assignedIds.includes(member.id)));
-    } else if (teamMembers.length > 0) {
-      setAvailableMembers(teamMembers);
     }
   }, [teamMembers, assignedMembers]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleEditProject = () => {
     if (project) {
@@ -130,7 +179,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
   const handleUpdateProject = async (updatedProject: Omit<Project, 'id' | 'userId'>) => {
     try {
       setIsLoading(true);
-      const response = await projectController.updateProject(projectId, updatedProject);
+      const response = await projectController.updateProject(route.params.projectId, updatedProject);
       
       if (response.success) {
         Alert.alert('Success', 'Project updated successfully');
@@ -158,7 +207,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
           onPress: async () => {
             try {
               setIsLoading(true);
-              const response = await projectController.deleteProject(projectId);
+              const response = await projectController.deleteProject(route.params.projectId);
               
               if (response.success) {
                 Alert.alert('Success', 'Project deleted successfully');
@@ -186,15 +235,13 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
       setIsLoading(true);
       
       // Update the project with new assignments
-      const response = await projectController.updateProject(projectId, {
+      const response = await projectController.updateProject(route.params.projectId, {
         ...project,
         assignedMembers: JSON.stringify(updatedAssignments.map(({ id, role }) => ({ id, role })))
       });
       
       if (response.success) {
         setAssignedMembers(updatedAssignments);
-        Alert.alert('Success', 'Team assignments updated successfully');
-        fetchProjectDetails();
       } else {
         Alert.alert('Error', response.error || 'Failed to update team assignments');
       }
@@ -204,12 +251,6 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Handle drag-and-drop reordering of team members
-  const onDragEnd = ({ data }: { data: AssignedMember[] }) => {
-    setAssignedMembers(data);
-    handleAssignmentChange(data);
   };
 
   // Add a team member to the project
@@ -222,92 +263,152 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
     
     const updatedAssignments = [...assignedMembers, newAssignment];
     setAssignedMembers(updatedAssignments);
-    handleAssignmentChange(updatedAssignments);
+    
+    // Use the same debounced approach as drag-and-drop
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    
+    updateTimeoutRef.current = setTimeout(() => {
+      handleAssignmentChange(updatedAssignments);
+    }, 300);
   };
 
   // Remove a team member from the project
   const removeTeamMember = (memberId: number) => {
     const updatedAssignments = assignedMembers.filter(member => member.id !== memberId);
     setAssignedMembers(updatedAssignments);
-    handleAssignmentChange(updatedAssignments);
+    
+    // Use the same debounced approach
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    
+    updateTimeoutRef.current = setTimeout(() => {
+      handleAssignmentChange(updatedAssignments);
+    }, 300);
   };
 
   // Update a team member's role in the project
   const updateMemberRole = (memberId: number, newRole: string) => {
+    // Create a deep copy to avoid modifying objects passed to Reanimated worklets
     const updatedAssignments = assignedMembers.map(member => 
-      member.id === memberId ? { ...member, role: newRole } : member
+      member.id === memberId ? {
+        id: member.id,
+        role: newRole,
+        memberData: member.memberData ? { ...member.memberData } : undefined
+      } : { ...member }
     );
+    
     setAssignedMembers(updatedAssignments);
-    handleAssignmentChange(updatedAssignments);
-  };
-
-  // Render an assigned team member item
-  const renderAssignedMember = ({ item, drag, isActive }: RenderItemParams<AssignedMember>) => {
-    const member = item.memberData;
-    if (!member) return null;
     
-    return (
-      <TouchableOpacity
-        style={[styles.memberCard, isActive && styles.memberCardActive]}
-        onLongPress={drag}
-        activeOpacity={0.7}
-      >
-        <View style={styles.memberDragHandle}>
-          <Icon name="drag" size={20} color={colors.textSecondary} />
-        </View>
-        
-        <View style={styles.memberInfo}>
-          <Text style={styles.memberName}>{member.name}</Text>
-          <View style={styles.memberRoleContainer}>
-            <TouchableOpacity 
-              style={styles.memberRoleButton}
-              onPress={() => {
-                // Show role selection modal or prompt
-                Alert.prompt(
-                  'Update Role',
-                  'Enter new role for this team member',
-                  [{ text: 'Cancel' }, { text: 'Update', onPress: (role) => updateMemberRole(member.id, role || 'Member') }],
-                  'plain-text',
-                  item.role
-                );
-              }}
-            >
-              <Text style={styles.memberRoleText}>{item.role}</Text>
-              <Icon name="pencil-outline" size={14} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.memberRemoveButton}
-          onPress={() => removeTeamMember(member.id)}
-        >
-          <Icon name="close" size={20} color={colors.error} />
-        </TouchableOpacity>
-      </TouchableOpacity>
-    );
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
-
-  // Get priority color
-  const getPriorityColor = () => {
-    if (!project) return colors.info;
+    // Use the same debounced approach
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
     
-    switch(project.priority) {
-      case 'High':
-        return colors.error;
-      case 'Medium':
-        return colors.warning;
-      case 'Low':
-        return colors.info;
-      default:
-        return colors.info;
+    updateTimeoutRef.current = setTimeout(() => {
+      handleAssignmentChange(updatedAssignments);
+    }, 300);
+  };
+
+  // Handle updating project progress
+  const handleUpdateProgress = async (newProgress: number) => {
+    if (!project) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Update the project with new progress
+      const response = await projectController.updateProject(route.params.projectId, {
+        ...project,
+        progress: newProgress
+      });
+      
+      if (response.success) {
+        setProject(prev => prev ? { ...prev, progress: newProgress } : null);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to update project progress');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle adding a task to the project
+  const handleAddTask = async (task: any) => {
+    try {
+      // Create a new task with the project ID
+      const newTask = {
+        name: `${task.type} Task`,
+        dueDate: new Date().toISOString(),
+        priority: 'Medium',
+        status: task.status,
+        taskType: task.type,
+        points: task.points,
+        notes: '',
+        projectId: route.params.projectId
+      };
+      
+      // Save the task to the database
+      const response = await taskController.createPersonalTask(1, newTask); // Using a default user ID of 1
+      
+      if (response.success && response.data) {
+        // Add the new task to the local state
+        setTasks(prev => [...prev, response.data]);
+      } else {
+        console.error('Failed to create task:', response.error);
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
+  };
+  
+  // Handle adding a personal task to the project's run rate calculations
+  const handleAddPersonalTaskToRunRate = async (personalTask: any) => {
+    if (personalTask.projectId === route.params.projectId && personalTask.runRateValues) {
+      // Create a run rate task from the personal task
+      const runRateTask = {
+        id: Date.now(),
+        type: personalTask.runRateValues.type,
+        status: personalTask.runRateValues.status,
+        points: personalTask.runRateValues.points,
+        completionDate: personalTask.runRateValues.status === 'Completed' ? new Date().toISOString() : undefined,
+        personalTaskId: personalTask.id // Reference to the personal task
+      };
+      
+      setTasks(prev => [...prev, runRateTask]);
+      // In a real app, you would save this to the database
+    }
+  };
+
+  // Handle updating a task
+  const handleUpdateTask = async (taskId: number, updates: any) => {
+    try {
+      // Find the task in the current state
+      const taskToUpdate = tasks.find(task => task.id === taskId);
+      
+      if (!taskToUpdate) {
+        console.error('Task not found:', taskId);
+        return;
+      }
+      
+      // Update the task in the database
+      const response = await taskController.updatePersonalTask(taskId, updates);
+      
+      if (response.success) {
+        // Update the task in the local state
+        setTasks(prev => prev.map(task => 
+          task.id === taskId ? { ...task, ...updates } : task
+        ));
+      } else {
+        console.error('Failed to update task:', response.error);
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
     }
   };
 
@@ -333,135 +434,58 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({ route,
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        
-        <Text style={styles.title} numberOfLines={1}>{project.name}</Text>
-        
-        <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={handleEditProject}
-          >
-            <Icon name="pencil" size={20} color={colors.text} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.deleteButton}
-            onPress={handleDeleteProject}
-          >
-            <Icon name="delete" size={20} color={colors.error} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ProjectHeader 
+        title={project.name}
+        onBack={() => navigation.goBack()}
+        onEdit={handleEditProject}
+        onDelete={handleDeleteProject}
+      />
       
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Project Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Project Details</Text>
-          
-          <View style={styles.detailsCard}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Status:</Text>
-              <Text style={[styles.detailValue, { color: project.status === 'Completed' ? colors.success : colors.primary }]}>
-                {project.status || 'Active'}
-              </Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Progress:</Text>
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[styles.progressFill, { width: `${project.progress || 0}%` }]} 
-                  />
-                </View>
-                <Text style={styles.progressText}>{project.progress || 0}%</Text>
-              </View>
-            </View>
-          </View>
-          
-          <View style={styles.descriptionCard}>
-            <Text style={styles.descriptionTitle}>Description</Text>
-            <Text style={styles.descriptionText}>{project.description}</Text>
-          </View>
-          
-          {tags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+        <ProjectDetails project={project} tags={tags} />
         
-        {/* Team Assignment Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Team Assignments</Text>
-            <TouchableOpacity 
-              style={styles.addMemberButton}
-              onPress={() => setShowAssignmentModal(!showAssignmentModal)}
-            >
-              <Icon name={showAssignmentModal ? "chevron-up" : "account-plus"} size={20} color={colors.primary} />
-              <Text style={styles.addMemberButtonText}>
-                {showAssignmentModal ? "Hide" : "Add Member"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Drag and drop team member list */}
-          {assignedMembers.length > 0 ? (
-            <View style={styles.teamContainer}>
-              <Text style={styles.dragInstructions}>Long press and drag to reorder team members</Text>
-              <DraggableFlatList
-                data={assignedMembers}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderAssignedMember}
-                onDragEnd={onDragEnd}
-                contentContainerStyle={styles.membersList}
-              />
-            </View>
-          ) : (
-            <View style={styles.emptyTeamContainer}>
-              <Icon name="account-group-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyTeamText}>No team members assigned</Text>
-              <Text style={styles.emptyTeamSubtext}>Add team members to this project</Text>
-            </View>
-          )}
-          
-          {/* Available members to add */}
-          {showAssignmentModal && (
-            <View style={styles.availableMembersContainer}>
-              <Text style={styles.availableMembersTitle}>Available Team Members</Text>
-              {availableMembers.length > 0 ? (
-                availableMembers.map(member => (
-                  <View key={member.id} style={styles.availableMemberRow}>
-                    <View style={styles.availableMemberInfo}>
-                      <Text style={styles.availableMemberName}>{member.name}</Text>
-                      <Text style={styles.availableMemberRole}>{member.role}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.assignButton}
-                      onPress={() => addTeamMember(member)}
-                    >
-                      <Text style={styles.assignButtonText}>Assign</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noAvailableMembersText}>No available team members</Text>
-              )}
-            </View>
-          )}
-        </View>
+        <ProjectRunRateSection 
+          projectId={project.id}
+          startDate={project.startDate}
+          deadline={project.deadline}
+          developerCount={assignedMembers.length}
+          tasks={tasks}
+          onTaskAdded={handleAddTask}
+          onTaskUpdated={handleUpdateTask}
+        />
+        
+        <MilestoneSection 
+          projectId={project.id}
+          userId={userId}
+        />
+        
+        <TeamAssignmentSection 
+          assignedMembers={assignedMembers}
+          availableMembers={availableMembers}
+          showAssignmentModal={showAssignmentModal}
+          onToggleAssignmentModal={() => setShowAssignmentModal(!showAssignmentModal)}
+          onMembersReordered={(newMembers) => {
+            setAssignedMembers(newMembers);
+            
+            // Debounce the API update
+            if (updateTimeoutRef.current) {
+              clearTimeout(updateTimeoutRef.current);
+            }
+            
+            updateTimeoutRef.current = setTimeout(() => {
+              if (project) {
+                projectController.updateProject(route.params.projectId, {
+                  assignedMembers: JSON.stringify(newMembers.map(({ id, role }) => ({ id, role })))
+                }).catch(error => {
+                  console.error('Failed to update member order:', error);
+                });
+              }
+            }, 500);
+          }}
+          onRemoveMember={removeTeamMember}
+          onUpdateRole={updateMemberRole}
+          onAddMember={addTeamMember}
+        />
       </ScrollView>
       
       <RBSheetProjectForm
@@ -480,285 +504,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-    backgroundColor: colors.card,
-    ...elevation.small,
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  title: {
-    flex: 1,
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginHorizontal: spacing.md,
-    textAlign: 'center',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  editButton: {
-    padding: spacing.xs,
-    marginRight: spacing.sm,
-  },
-  deleteButton: {
-    padding: spacing.xs,
-  },
   content: {
     flex: 1,
   },
   contentContainer: {
-    padding: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  detailsCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  detailLabel: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  detailValue: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-  },
-  priorityBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.round,
-  },
-  priorityText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  progressBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: borderRadius.round,
-    overflow: 'hidden',
-    marginRight: spacing.sm,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.round,
-  },
-  progressText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    width: 40,
-    textAlign: 'right',
-  },
-  descriptionCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  descriptionTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  descriptionText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.md,
-  },
-  tag: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: borderRadius.round,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    margin: spacing.xs,
-  },
-  tagText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-  },
-  addMemberButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.xs,
-  },
-  addMemberButtonText: {
-    color: colors.primary,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    marginLeft: spacing.xs,
-  },
-  teamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  dragInstructions: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  membersList: {
-    paddingBottom: spacing.sm,
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    ...elevation.small,
-  },
-  memberCardActive: {
-    backgroundColor: colors.primaryLight,
-    opacity: 0.8,
-  },
-  memberDragHandle: {
-    paddingHorizontal: spacing.xs,
-  },
-  memberInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  memberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  memberRoleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  memberRoleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberRoleText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginRight: spacing.xs,
-  },
-  memberRemoveButton: {
-    padding: spacing.xs,
-  },
-  emptyTeamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
-    ...elevation.small,
-  },
-  emptyTeamText: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginTop: spacing.md,
-  },
-  emptyTeamSubtext: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  availableMembersContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  availableMembersTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  availableMemberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  availableMemberInfo: {
-    flex: 1,
-  },
-  availableMemberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  availableMemberRole: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-  },
-  assignButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.sm,
-  },
-  assignButtonText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  noAvailableMembersText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-    textAlign: 'center',
     padding: spacing.md,
   },
   loadingContainer: {
@@ -785,1298 +534,13 @@ const styles = StyleSheet.create({
     color: colors.error,
     marginBottom: spacing.lg,
   },
-  backButtonText: {
-    color: colors.primary,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-  },
-});
-              <Text style={styles.detailLabel}>Priority:</Text>
-              <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor() }]}>
-                <Text style={styles.priorityText}>{project.priority}</Text>
-              </View>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Status:</Text>
-              <Text style={[styles.detailValue, { color: project.status === 'Completed' ? colors.success : colors.primary }]}>
-                {project.status || 'Active'}
-              </Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Progress:</Text>
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[styles.progressFill, { width: `${project.progress || 0}%` }]} 
-                  />
-                </View>
-                <Text style={styles.progressText}>{project.progress || 0}%</Text>
-              </View>
-            </View>
-          </View>
-          
-          <View style={styles.descriptionCard}>
-            <Text style={styles.descriptionTitle}>Description</Text>
-            <Text style={styles.descriptionText}>{project.description}</Text>
-          </View>
-          
-          {tags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-        
-        {/* Team Assignment Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Team Assignments</Text>
-            <TouchableOpacity 
-              style={styles.addMemberButton}
-              onPress={() => setShowAssignmentModal(!showAssignmentModal)}
-            >
-              <Icon name={showAssignmentModal ? "chevron-up" : "account-plus"} size={20} color={colors.primary} />
-              <Text style={styles.addMemberButtonText}>
-                {showAssignmentModal ? "Hide" : "Add Member"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Drag and drop team member list */}
-          {assignedMembers.length > 0 ? (
-            <View style={styles.teamContainer}>
-              <Text style={styles.dragInstructions}>Long press and drag to reorder team members</Text>
-              <DraggableFlatList
-                data={assignedMembers}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderAssignedMember}
-                onDragEnd={onDragEnd}
-                contentContainerStyle={styles.membersList}
-              />
-            </View>
-          ) : (
-            <View style={styles.emptyTeamContainer}>
-              <Icon name="account-group-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyTeamText}>No team members assigned</Text>
-              <Text style={styles.emptyTeamSubtext}>Add team members to this project</Text>
-            </View>
-          )}
-          
-          {/* Available members to add */}
-          {showAssignmentModal && (
-            <View style={styles.availableMembersContainer}>
-              <Text style={styles.availableMembersTitle}>Available Team Members</Text>
-              {availableMembers.length > 0 ? (
-                availableMembers.map(member => (
-                  <View key={member.id} style={styles.availableMemberRow}>
-                    <View style={styles.availableMemberInfo}>
-                      <Text style={styles.availableMemberName}>{member.name}</Text>
-                      <Text style={styles.availableMemberRole}>{member.role}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.assignButton}
-                      onPress={() => addTeamMember(member)}
-                    >
-                      <Text style={styles.assignButtonText}>Assign</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noAvailableMembersText}>No available team members</Text>
-              )}
-            </View>
-          )}
-        </View>
-      </ScrollView>
-      
-      <RBSheetProjectForm
-        ref={projectFormRef}
-        initialValues={project}
-        onSubmit={handleUpdateProject}
-        onClose={() => {}}
-        teamMembers={teamMembers}
-      />
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-    backgroundColor: colors.card,
-    ...elevation.small,
-  },
   backButton: {
     padding: spacing.xs,
   },
-  title: {
-    flex: 1,
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginHorizontal: spacing.md,
-    textAlign: 'center',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  editButton: {
-    padding: spacing.xs,
-    marginRight: spacing.sm,
-  },
-  deleteButton: {
-    padding: spacing.xs,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  detailsCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  detailLabel: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  detailValue: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-  },
-  priorityBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.round,
-  },
-  priorityText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  progressBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: borderRadius.round,
-    overflow: 'hidden',
-    marginRight: spacing.sm,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.round,
-  },
-  progressText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    width: 40,
-    textAlign: 'right',
-  },
-  descriptionCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  descriptionTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  descriptionText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.md,
-  },
-  tag: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: borderRadius.round,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    margin: spacing.xs,
-  },
-  tagText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-  },
-  addMemberButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.xs,
-  },
-  addMemberButtonText: {
-    color: colors.primary,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    marginLeft: spacing.xs,
-  },
-  teamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  dragInstructions: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  membersList: {
-    paddingBottom: spacing.sm,
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    ...elevation.small,
-  },
-  memberCardActive: {
-    backgroundColor: colors.primaryLight,
-    opacity: 0.8,
-  },
-  memberDragHandle: {
-    paddingHorizontal: spacing.xs,
-  },
-  memberInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  memberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  memberRoleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  memberRoleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberRoleText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginRight: spacing.xs,
-  },
-  memberRemoveButton: {
-    padding: spacing.xs,
-  },
-  emptyTeamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
-    ...elevation.small,
-  },
-  emptyTeamText: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginTop: spacing.md,
-  },
-  emptyTeamSubtext: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  availableMembersContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  availableMembersTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  availableMemberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  availableMemberInfo: {
-    flex: 1,
-  },
-  availableMemberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  availableMemberRole: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-  },
-  assignButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.sm,
-  },
-  assignButtonText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  noAvailableMembersText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    padding: spacing.md,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    padding: spacing.xl,
-  },
-  errorText: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.error,
-    marginBottom: spacing.lg,
-  },
   backButtonText: {
     color: colors.primary,
     fontSize: typography.fontSizes.md,
     fontWeight: typography.fontWeights.medium,
   },
 });
-              <Text style={styles.detailLabel}>Start Date:</Text>
-              <Text style={styles.detailValue}>{formatDate(project.startDate)}</Text>
-            </View>
             
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Status:</Text>
-              <Text style={[styles.detailValue, { color: project.status === 'Completed' ? colors.success : colors.primary }]}>
-                {project.status || 'Active'}
-              </Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Progress:</Text>
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[styles.progressFill, { width: `${project.progress || 0}%` }]} 
-                  />
-                </View>
-                <Text style={styles.progressText}>{project.progress || 0}%</Text>
-              </View>
-            </View>
-          </View>
-          
-          <View style={styles.descriptionCard}>
-            <Text style={styles.descriptionTitle}>Description</Text>
-            <Text style={styles.descriptionText}>{project.description}</Text>
-          </View>
-          
-          {tags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-        
-        {/* Team Assignment Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Team Assignments</Text>
-            <TouchableOpacity 
-              style={styles.addMemberButton}
-              onPress={() => setShowAssignmentModal(!showAssignmentModal)}
-            >
-              <Icon name={showAssignmentModal ? "chevron-up" : "account-plus"} size={20} color={colors.primary} />
-              <Text style={styles.addMemberButtonText}>
-                {showAssignmentModal ? "Hide" : "Add Member"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Drag and drop team member list */}
-          {assignedMembers.length > 0 ? (
-            <View style={styles.teamContainer}>
-              <Text style={styles.dragInstructions}>Long press and drag to reorder team members</Text>
-              <DraggableFlatList
-                data={assignedMembers}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderAssignedMember}
-                onDragEnd={onDragEnd}
-                contentContainerStyle={styles.membersList}
-              />
-            </View>
-          ) : (
-            <View style={styles.emptyTeamContainer}>
-              <Icon name="account-group-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyTeamText}>No team members assigned</Text>
-              <Text style={styles.emptyTeamSubtext}>Add team members to this project</Text>
-            </View>
-          )}
-          
-          {/* Available members to add */}
-          {showAssignmentModal && (
-            <View style={styles.availableMembersContainer}>
-              <Text style={styles.availableMembersTitle}>Available Team Members</Text>
-              {availableMembers.length > 0 ? (
-                availableMembers.map(member => (
-                  <View key={member.id} style={styles.availableMemberRow}>
-                    <View style={styles.availableMemberInfo}>
-                      <Text style={styles.availableMemberName}>{member.name}</Text>
-                      <Text style={styles.availableMemberRole}>{member.role}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.assignButton}
-                      onPress={() => addTeamMember(member)}
-                    >
-                      <Text style={styles.assignButtonText}>Assign</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noAvailableMembersText}>No available team members</Text>
-              )}
-            </View>
-          )}
-        </View>
-      </ScrollView>
-      
-      <RBSheetProjectForm
-        ref={projectFormRef}
-        initialValues={project}
-        onSubmit={handleUpdateProject}
-        onClose={() => {}}
-        teamMembers={teamMembers}
-      />
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-    backgroundColor: colors.card,
-    ...elevation.small,
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  title: {
-    flex: 1,
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginHorizontal: spacing.md,
-    textAlign: 'center',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  editButton: {
-    padding: spacing.xs,
-    marginRight: spacing.sm,
-  },
-  deleteButton: {
-    padding: spacing.xs,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  detailsCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  detailLabel: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  detailValue: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-  },
-  priorityBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.round,
-  },
-  priorityText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  progressBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: borderRadius.round,
-    overflow: 'hidden',
-    marginRight: spacing.sm,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.round,
-  },
-  progressText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    width: 40,
-    textAlign: 'right',
-  },
-  descriptionCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  descriptionTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  descriptionText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.md,
-  },
-  tag: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: borderRadius.round,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    margin: spacing.xs,
-  },
-  tagText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-  },
-  addMemberButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.xs,
-  },
-  addMemberButtonText: {
-    color: colors.primary,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    marginLeft: spacing.xs,
-  },
-  teamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  dragInstructions: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  membersList: {
-    paddingBottom: spacing.sm,
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    ...elevation.small,
-  },
-  memberCardActive: {
-    backgroundColor: colors.primaryLight,
-    opacity: 0.8,
-  },
-  memberDragHandle: {
-    paddingHorizontal: spacing.xs,
-  },
-  memberInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  memberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  memberRoleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  memberRoleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberRoleText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginRight: spacing.xs,
-  },
-  memberRemoveButton: {
-    padding: spacing.xs,
-  },
-  emptyTeamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
-    ...elevation.small,
-  },
-  emptyTeamText: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginTop: spacing.md,
-  },
-  emptyTeamSubtext: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  availableMembersContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  availableMembersTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  availableMemberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  availableMemberInfo: {
-    flex: 1,
-  },
-  availableMemberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  availableMemberRole: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-  },
-  assignButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.sm,
-  },
-  assignButtonText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  noAvailableMembersText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    padding: spacing.md,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    padding: spacing.xl,
-  },
-  errorText: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.error,
-    marginBottom: spacing.lg,
-  },
-  backButtonText: {
-    color: colors.primary,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-  },
-});
-              <Text style={styles.detailLabel}>Deadline:</Text>
-              <Text style={styles.detailValue}>{formatDate(project.deadline)}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Status:</Text>
-              <Text style={[styles.detailValue, { color: project.status === 'Completed' ? colors.success : colors.primary }]}>
-                {project.status || 'Active'}
-              </Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Progress:</Text>
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[styles.progressFill, { width: `${project.progress || 0}%` }]} 
-                  />
-                </View>
-                <Text style={styles.progressText}>{project.progress || 0}%</Text>
-              </View>
-            </View>
-          </View>
-          
-          <View style={styles.descriptionCard}>
-            <Text style={styles.descriptionTitle}>Description</Text>
-            <Text style={styles.descriptionText}>{project.description}</Text>
-          </View>
-          
-          {tags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-        
-        {/* Team Assignment Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Team Assignments</Text>
-            <TouchableOpacity 
-              style={styles.addMemberButton}
-              onPress={() => setShowAssignmentModal(!showAssignmentModal)}
-            >
-              <Icon name={showAssignmentModal ? "chevron-up" : "account-plus"} size={20} color={colors.primary} />
-              <Text style={styles.addMemberButtonText}>
-                {showAssignmentModal ? "Hide" : "Add Member"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Drag and drop team member list */}
-          {assignedMembers.length > 0 ? (
-            <View style={styles.teamContainer}>
-              <Text style={styles.dragInstructions}>Long press and drag to reorder team members</Text>
-              <DraggableFlatList
-                data={assignedMembers}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderAssignedMember}
-                onDragEnd={onDragEnd}
-                contentContainerStyle={styles.membersList}
-              />
-            </View>
-          ) : (
-            <View style={styles.emptyTeamContainer}>
-              <Icon name="account-group-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyTeamText}>No team members assigned</Text>
-              <Text style={styles.emptyTeamSubtext}>Add team members to this project</Text>
-            </View>
-          )}
-          
-          {/* Available members to add */}
-          {showAssignmentModal && (
-            <View style={styles.availableMembersContainer}>
-              <Text style={styles.availableMembersTitle}>Available Team Members</Text>
-              {availableMembers.length > 0 ? (
-                availableMembers.map(member => (
-                  <View key={member.id} style={styles.availableMemberRow}>
-                    <View style={styles.availableMemberInfo}>
-                      <Text style={styles.availableMemberName}>{member.name}</Text>
-                      <Text style={styles.availableMemberRole}>{member.role}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.assignButton}
-                      onPress={() => addTeamMember(member)}
-                    >
-                      <Text style={styles.assignButtonText}>Assign</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noAvailableMembersText}>No available team members</Text>
-              )}
-            </View>
-          )}
-        </View>
-      </ScrollView>
-      
-      <RBSheetProjectForm
-        ref={projectFormRef}
-        initialValues={project}
-        onSubmit={handleUpdateProject}
-        onClose={() => {}}
-        teamMembers={teamMembers}
-      />
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-    backgroundColor: colors.card,
-    ...elevation.small,
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  title: {
-    flex: 1,
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginHorizontal: spacing.md,
-    textAlign: 'center',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  editButton: {
-    padding: spacing.xs,
-    marginRight: spacing.sm,
-  },
-  deleteButton: {
-    padding: spacing.xs,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  detailsCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  detailLabel: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  detailValue: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-  },
-  priorityBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.round,
-  },
-  priorityText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  progressBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: borderRadius.round,
-    overflow: 'hidden',
-    marginRight: spacing.sm,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.round,
-  },
-  progressText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    width: 40,
-    textAlign: 'right',
-  },
-  descriptionCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  descriptionTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  descriptionText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.md,
-  },
-  tag: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: borderRadius.round,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    margin: spacing.xs,
-  },
-  tagText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-  },
-  addMemberButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.xs,
-  },
-  addMemberButtonText: {
-    color: colors.primary,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    marginLeft: spacing.xs,
-  },
-  teamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...elevation.small,
-  },
-  dragInstructions: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  membersList: {
-    paddingBottom: spacing.sm,
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    ...elevation.small,
-  },
-  memberCardActive: {
-    backgroundColor: colors.primaryLight,
-    opacity: 0.8,
-  },
-  memberDragHandle: {
-    paddingHorizontal: spacing.xs,
-  },
-  memberInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  memberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  memberRoleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  memberRoleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberRoleText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginRight: spacing.xs,
-  },
-  memberRemoveButton: {
-    padding: spacing.xs,
-  },
-  emptyTeamContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
-    ...elevation.small,
-  },
-  emptyTeamText: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginTop: spacing.md,
-  },
-  emptyTeamSubtext: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  availableMembersContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    ...elevation.small,
-  },
-  availableMembersTitle: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  availableMemberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  availableMemberInfo: {
-    flex: 1,
-  },
-  availableMemberName: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  availableMemberRole: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-  },
-  assignButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.sm,
-  },
-  assignButtonText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.medium,
-  },
-  noAvailableMembersText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    padding: spacing.md,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.fontSizes.md,
-    color: colors.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    padding: spacing.xl,
-  },
-  errorText: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.error,
-    marginBottom: spacing.lg,
-  },
-  backButtonText: {
-    color: colors.primary,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-  },
-});

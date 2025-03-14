@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ProgressBarAndroid, Platform } from 'react-native';
 import { Project } from '@models/Project';
 import { colors, spacing, typography, elevation, borderRadius } from '@constants/theme';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type ProjectCardProps = {
   project: Project;
@@ -44,11 +45,65 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     return date.toLocaleDateString();
   };
 
-  // Calculate progress percentage (placeholder for now)
+  // Calculate progress percentage
   const getProgressPercentage = () => {
-    // In a real implementation, this would come from the project data
-    return 0.6; // 60% complete
+    return project.progress ? project.progress / 100 : 0;
   };
+
+  // Calculate Project Run Rate (PRR) and Required Project Run Rate (RPRR)
+  const calculateRunRates = () => {
+    const startDate = new Date(project.startDate);
+    const deadlineDate = new Date(project.deadline);
+    const currentDate = new Date();
+    
+    const totalDays = Math.ceil((deadlineDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysElapsed = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, Math.ceil((deadlineDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    const progressPercentage = project.progress || 0;
+    
+    // Calculate Project Run Rate (PRR) - current pace
+    const prr = daysElapsed > 0 ? (progressPercentage / daysElapsed) * totalDays : 0;
+    
+    // Calculate Required Project Run Rate (RPRR) - required pace to complete on time
+    const rprr = daysRemaining > 0 ? ((100 - progressPercentage) / daysRemaining) * daysRemaining : 100;
+    
+    return { prr, rprr, daysRemaining };
+  };
+
+  // Determine project status based on PRR vs RPRR
+  const getProjectStatus = () => {
+    const { prr, rprr, daysRemaining } = calculateRunRates();
+    const progressPercentage = project.progress || 0;
+    
+    if (progressPercentage >= 100) return 'completed';
+    if (daysRemaining <= 0) return 'overdue';
+    if (prr >= rprr * 1.1) return 'ahead';
+    if (prr >= rprr * 0.9) return 'onTrack';
+    return 'behind';
+  };
+
+  // Get status icon and color
+  const getStatusInfo = () => {
+    const status = getProjectStatus();
+    
+    switch (status) {
+      case 'ahead':
+        return { icon: 'rocket', color: colors.success, text: 'Ahead' };
+      case 'onTrack':
+        return { icon: 'check-circle', color: colors.primary, text: 'On Track' };
+      case 'behind':
+        return { icon: 'alert', color: colors.warning, text: 'Behind' };
+      case 'overdue':
+        return { icon: 'alert-circle', color: colors.error, text: 'Overdue' };
+      case 'completed':
+        return { icon: 'check-circle', color: colors.success, text: 'Completed' };
+      default:
+        return { icon: 'help-circle', color: colors.textSecondary, text: 'Unknown' };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
 
   return (
     <TouchableOpacity 
@@ -87,6 +142,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </View>
             <Text style={styles.progressText}>{Math.round(getProgressPercentage() * 100)}%</Text>
           </View>
+
+          {/* Run Rate Status */}
+          <View style={styles.runRateContainer}>
+            <Icon name={statusInfo.icon} size={16} color={statusInfo.color} />
+            <Text style={[styles.runRateText, { color: statusInfo.color }]}>
+              {statusInfo.text}
+            </Text>
+          </View>
         </View>
         
         {/* Right side - Priority */}
@@ -104,18 +167,16 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginVertical: spacing.sm,
-    marginHorizontal: spacing.sm,
-    ...elevation.medium,
+    marginBottom: spacing.md,
+    ...elevation.small,
   },
   cardContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    padding: spacing.md,
   },
   infoContainer: {
     flex: 1,
-    justifyContent: 'center',
+    marginRight: spacing.md,
   },
   name: {
     fontSize: typography.fontSizes.lg,
@@ -124,7 +185,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   detailsRow: {
-    marginTop: spacing.xs,
+    flexDirection: 'row',
+    marginBottom: spacing.xs,
   },
   detailsText: {
     fontSize: typography.fontSizes.sm,
@@ -133,42 +195,51 @@ const styles = StyleSheet.create({
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   progressBarContainer: {
     flex: 1,
     marginRight: spacing.sm,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: colors.border,
-    borderRadius: borderRadius.round,
+    height: 8,
+    backgroundColor: colors.background,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.round,
+    borderRadius: 4,
   },
   progressText: {
     fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
     width: 40,
     textAlign: 'right',
   },
   priorityContainer: {
-    alignItems: 'flex-end',
     justifyContent: 'flex-start',
-    paddingLeft: spacing.md,
   },
   priorityIndicator: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: borderRadius.round,
+    borderRadius: borderRadius.sm,
   },
   priorityText: {
+    fontSize: typography.fontSizes.xs,
+    fontWeight: typography.fontWeights.bold,
     color: colors.card,
+  },
+  runRateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  runRateText: {
     fontSize: typography.fontSizes.sm,
     fontWeight: typography.fontWeights.medium,
-  }
+    marginLeft: spacing.xs,
+  },
 });

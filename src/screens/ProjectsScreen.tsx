@@ -68,9 +68,7 @@ export const ProjectsScreen: React.FC = () => {
       
       if (response.success && response.data) {
         setTeamMembers(response.data);
-      } else {
-        console.error('Failed to fetch team members:', response.error);
-      }
+      } 
     } catch (error) {
       console.error('Error fetching team members:', error);
     }
@@ -101,7 +99,7 @@ export const ProjectsScreen: React.FC = () => {
   };
 
   const handleViewProject = (project: Project) => {
-    navigation.navigate('ProjectDetail', { projectId: project.id });
+    navigation.navigate('ProjectDetailScreen', { projectId: project.id });
   };
 
   const sortProjects = (projects: Project[]): Project[] => {

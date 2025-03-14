@@ -1,7 +1,7 @@
 // src/services/teamService.ts
 import { localDB } from '@database/db';
 import { teamMembers, TeamMember, NewTeamMember } from '@models/TeamMember';
-import { eq, inArray,and } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 
 /**
  * Creates a new team member.
@@ -14,13 +14,18 @@ export const createTeamMember = async (
     member: Omit<NewTeamMember, 'userId'>
 ): Promise<TeamMember> => {
     const db = await localDB();
-    
+
     // Check for existing team member with the same email
     const existingMember = await db
-  .select()
-  .from(teamMembers)
-  .where(eq(teamMembers.email, member.email))
-  .limit(1);
+        .select()
+        .from(teamMembers)
+        .where(
+            and(
+                eq(teamMembers.email, member.email),
+                eq(teamMembers.userId, userId)
+            )
+        )
+        .limit(1);
 
     if (existingMember.length > 0) {
         throw new Error('A team member with this email already exists');

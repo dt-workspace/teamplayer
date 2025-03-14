@@ -22,6 +22,7 @@ import { RBSheetTeamMemberForm } from '@components/RBSheetTeamMemberForm';
 export type TeamsStackParamList = {
   TeamsList: { editMemberId?: number };
   TeamMemberDetail: { memberId: number };
+  ProjectDetailScreen: { projectId: number };
 };
 
 type TeamMemberDetailScreenProps = {

@@ -2,6 +2,7 @@
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 import { users } from './User';
 import { relations } from 'drizzle-orm';
+import { milestones } from './Milestone';
 
 /**
  * Projects table schema for project management in the Team Player app.
@@ -21,11 +22,12 @@ export const projects = sqliteTable('Projects', {
 });
 
 // Define relationships
-export const projectsRelations = relations(projects, ({ one }) => ({
+export const projectsRelations = relations(projects, ({ one, many }) => ({
   user: one(users, {
     fields: [projects.userId],
     references: [users.id],
   }),
+  milestones: many(milestones),
 }));
 
 // Inferred TypeScript types

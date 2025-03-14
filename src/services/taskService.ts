@@ -1,7 +1,7 @@
 // src/services/taskService.ts
 import { localDB } from '@database/db';
 import { personalTasks, PersonalTask, NewPersonalTask } from '@models/PersonalTask';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, sql } from 'drizzle-orm';
 
 /**
  * Creates a new personal task.
@@ -13,12 +13,39 @@ export const createPersonalTask = async (
     userId: number,
     task: Omit<NewPersonalTask, 'userId'>
 ): Promise<PersonalTask> => {
-    const db = await localDB();
-    const [newTask] = await db
-        .insert(personalTasks)
-        .values({ ...task, userId })
-        .returning();
-    return newTask;
+    try {
+        if (!userId) throw new Error('User ID is required');
+        if (!task) throw new Error('Task data is required');
+
+        const db = await localDB();
+        if (!db) throw new Error('Database connection failed');
+
+        // Validate required fields
+        const requiredFields = ['name', 'dueDate', 'priority', 'status', 'taskType', 'points'];
+        for (const field of requiredFields) {
+            if (!task[field]) {
+                throw new Error(`${field} is required`);
+            }
+        }
+
+        // Validate task type and points correlation
+        const pointsMap = { Small: 1, Medium: 3, Large: 5 };
+        if (task.points !== pointsMap[task.taskType]) {
+            throw new Error(`Invalid points for task type ${task.taskType}`);
+        }
+
+        const [newTask] = await db
+            .insert(personalTasks)
+            .values({ ...task, userId })
+            .returning();
+
+        if (!newTask) throw new Error('Failed to create task');
+
+        return newTask;
+    } catch (error) {
+        console.error('Error in createPersonalTask:', error);
+        throw error instanceof Error ? error : new Error('Unknown error occurred');
+    }
 };
 
 /**
@@ -100,4 +127,76 @@ export const completePersonalTask = async (id: number): Promise<PersonalTask> =>
         .where(eq(personalTasks.id, id))
         .returning();
     return task;
+};
+
+/**
+ * Gets all tasks for a project.
+ * @param projectId - Project ID
+ * @returns Array of tasks
+ */
+export const getTasksByProject = async (projectId: number): Promise<PersonalTask[]> => {
+    const db = await localDB();
+    return db
+        .select()
+        .from(personalTasks)
+        .where(eq(personalTasks.projectId, projectId));
+};
+
+/**
+ * Calculates task run rate for a project.
+ * @param projectId - Project ID
+ * @param startDate - Start date (ISO 8601)
+ * @param endDate - End date (ISO 8601)
+ * @returns Run rate metrics
+ */
+export const calculateTaskRunRate = async (
+    projectId: number,
+    startDate: string,
+    endDate: string
+): Promise<{ completed: number; total: number; runRate: number }> => {
+    const db = await localDB();
+    const tasks = await db
+        .select({
+            completed: sql<number>`sum(case when status = 'Completed' then 1 else 0 end)`,
+            total: sql<number>`count(*)`
+        })
+        .from(personalTasks)
+        .where(
+            and(
+                eq(personalTasks.projectId, projectId),
+                gte(personalTasks.dueDate, startDate),
+                lte(personalTasks.dueDate, endDate)
+            )
+        );
+
+    const { completed, total } = tasks[0];
+    const runRate = total > 0 ? (completed / total) * 100 : 0;
+
+    return { completed, total, runRate };
+};
+
+/**
+ * Gets all tasks for a process.
+ * @param processId - Process ID
+ * @returns Array of tasks
+ */
+export const getTasksByProcess = async (processId: number): Promise<PersonalTask[]> => {
+    const db = await localDB();
+    return db
+        .select()
+        .from(personalTasks)
+        .where(eq(personalTasks.processId, processId));
+};
+
+/**
+ * Gets all tasks for a milestone.
+ * @param milestoneId - Milestone ID
+ * @returns Array of tasks
+ */
+export const getTasksByMilestone = async (milestoneId: number): Promise<PersonalTask[]> => {
+    const db = await localDB();
+    return db
+        .select()
+        .from(personalTasks)
+        .where(eq(personalTasks.milestoneId, milestoneId));
 };

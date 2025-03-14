@@ -11,6 +11,8 @@ import {
   import { TeamMember, NewTeamMember } from '@models/TeamMember';
   import { ControllerResponse } from '../types/response';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authController } from '.';
+import { Alert } from 'react-native';
   
   export class TeamController {
     /**
@@ -123,17 +125,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
      */
     async getAllTeamMembers(): Promise<ControllerResponse<TeamMember[]>> {
       try {
-        const userString = await AsyncStorage.getItem('currentUser');
-        console.log('User from AsyncStorage:', userString);
         
-        // Parse the user string from AsyncStorage
-        const user = userString ? JSON.parse(userString) : null;
+        const user = await authController.getCurrentUser();
+        if(!user){
+          Alert.alert('Error', 'User not found');
+        }
+       
         
-        // Get user ID from parsed object, or use a default (1) if not available
-        const userId = user?.id || 1; // Fallback to ID 1 if user not found
-        console.log('Using user ID:', userId);
-        
-        const members = await getTeamMembersByUser(userId);
+        const members = await getTeamMembersByUser(user?.id);
         return { success: true, data: members };
       } catch (error) {
         return { success: false, error: `Failed to get team members: ${error}` };

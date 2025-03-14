@@ -41,6 +41,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const [newTag, setNewTag] = useState('');
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'Active' | 'Completed'>('Active');
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
   
   // Date picker state
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -185,7 +186,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>
           {initialValues ? 'Edit Project' : 'Create Project'}
         </Text>
@@ -390,49 +391,69 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
         {/* Team Members */}
         <View style={styles.formGroup}>
           <Text style={styles.label}>Assign Team Members</Text>
-          <View style={styles.teamMembersContainer}>
-            {teamMembers.map((member) => (
-              <View key={member.id} style={styles.memberRow}>
-                <View style={styles.memberInfo}>
-                  <Text style={styles.memberName}>{member.name}</Text>
-                  <Text style={styles.memberRole}>{member.role}</Text>
-                </View>
-                
-                <View style={styles.memberAssignContainer}>
-                  {isMemberSelected(member.id) ? (
-                    <View style={styles.memberRoleInputContainer}>
-                      <TextInput
-                        style={styles.memberRoleInput}
-                        value={getMemberRole(member.id)}
-                        onChangeText={(role) => {
-                          setSelectedMembers(prev => 
-                            prev.map(m => 
-                              m.id === member.id ? { ...m, role } : m
-                            )
-                          );
-                        }}
-                        placeholder="Role in project"
-                        placeholderTextColor={colors.placeholder}
-                      />
-                      <TouchableOpacity 
-                        style={styles.removeMemberButton}
-                        onPress={() => toggleMember(member, '')}
-                      >
-                        <Text style={styles.removeMemberButtonText}>×</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <TouchableOpacity 
-                      style={styles.assignButton}
-                      onPress={() => toggleMember(member, 'Member')}
-                    >
-                      <Text style={styles.assignButtonText}>Assign</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            ))}
+          
+          {/* Search input for team members */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              value={memberSearchQuery}
+              onChangeText={setMemberSearchQuery}
+              placeholder="Search team members..."
+              placeholderTextColor={colors.placeholder}
+              clearButtonMode="while-editing"
+            />
           </View>
+          
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.teamMembersScrollView} contentContainerStyle={styles.teamMembersScrollContent}>
+            <View style={styles.teamMembersContainer}>
+              {teamMembers
+                .filter(member => 
+                  member.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
+                  member.role.toLowerCase().includes(memberSearchQuery.toLowerCase())
+                )
+                .map((member) => (
+                <View key={member.id} style={[styles.memberRow]}>
+                  <View style={styles.memberInfo}>
+                    <Text style={styles.memberName}>{member.name}</Text>
+                    <Text style={styles.memberRole}>{member.role}</Text>
+                  </View>
+                  
+                  <View style={styles.memberAssignContainer}>
+                    {isMemberSelected(member.id) ? (
+                      <View style={styles.memberRoleInputContainer}>
+                        <TextInput
+                          style={styles.memberRoleInput}
+                          value={getMemberRole(member.id)}
+                          onChangeText={(role) => {
+                            setSelectedMembers(prev => 
+                              prev.map(m => 
+                                m.id === member.id ? { ...m, role } : m
+                              )
+                            );
+                          }}
+                          placeholder="Role in project"
+                          placeholderTextColor={colors.placeholder}
+                        />
+                        <TouchableOpacity 
+                          style={styles.removeMemberButton}
+                          onPress={() => toggleMember(member, '')}
+                        >
+                          <Text style={styles.removeMemberButtonText}>×</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity 
+                        style={styles.assignButton}
+                        onPress={() => toggleMember(member, 'Member')}
+                      >
+                        <Text style={styles.assignButtonText}>Assign</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
         </View>
         
         <View style={styles.buttonContainer}>
@@ -627,12 +648,34 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.md,
     fontWeight: typography.fontWeights.bold,
   },
-  teamMembersContainer: {
+  searchContainer: {
+    marginBottom: spacing.sm,
+  },
+  searchInput: {
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: borderRadius.sm,
     padding: spacing.md,
+    fontSize: typography.fontSizes.md,
+    color: colors.text,
+  },
+  teamMembersContainer: {
+    backgroundColor: colors.card,
+
+    borderRadius: borderRadius.sm,
+    padding: spacing.md,
+  },
+  teamMembersScrollView: {
+    maxHeight: 300,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
+  },
+  teamMembersScrollContent: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   memberRow: {
     flexDirection: 'row',
@@ -641,6 +684,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
+    borderRadius: borderRadius.xs,
+  },
+  selectedMemberRow: {
+    backgroundColor: colors.primaryLight,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
   },
   memberInfo: {
     flex: 1,

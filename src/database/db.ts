@@ -39,8 +39,21 @@ class Database {
   }
 
   public async reset(): Promise<void> {
+    if (!this.dbInstance) {
+      throw new Error('Database instance not initialized');
+    }
+
+    // Drop all tables
+    const tables = ['PersonalTasks', 'Availability', 'Projects', 'TeamMembers', 'Users', 'Processes', 'Milestones'];
+    for (const table of tables) {
+      await this.dbInstance.execute(`DROP TABLE IF EXISTS ${table}`);
+    }
+
+    // Close and reset the connection
     await this.close();
     Database.instance = null;
+
+    console.log('Database reset completed');
   }
 
   public async getDBInsstance(): Promise<DB> {
@@ -140,6 +153,23 @@ class Database {
       )
     `);
 
+    // Milestones table
+    await this.dbInstance.execute(`
+      CREATE TABLE IF NOT EXISTS Milestones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        project_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        deadline TEXT NOT NULL,
+        description TEXT CHECK (length(description) <= 500),
+        status TEXT DEFAULT 'Not Started' CHECK (status IN ('Not Started', 'In Progress', 'Completed', 'Delayed')),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+        FOREIGN KEY (project_id) REFERENCES Projects(id) ON DELETE CASCADE
+      )
+    `);
+
     // PersonalTasks table
     await this.dbInstance.execute(`
       CREATE TABLE IF NOT EXISTS PersonalTasks (
@@ -152,6 +182,31 @@ class Database {
         status TEXT NOT NULL CHECK (status IN ('To Do', 'In Progress', 'Completed', 'On Hold')),
         notes TEXT CHECK (length(notes) <= 1000),
         subtasks TEXT,
+        assigned_to_id INTEGER,
+        project_id INTEGER,
+        milestone_id INTEGER,
+        task_type TEXT NOT NULL CHECK (task_type IN ('Small', 'Medium', 'Large')),
+        points INTEGER NOT NULL,
+        process_id INTEGER,
+        FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+        FOREIGN KEY (assigned_to_id) REFERENCES TeamMembers(id) ON DELETE SET NULL,
+        FOREIGN KEY (project_id) REFERENCES Projects(id) ON DELETE SET NULL,
+        FOREIGN KEY (milestone_id) REFERENCES Milestones(id) ON DELETE SET NULL,
+        FOREIGN KEY (process_id) REFERENCES Processes(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Processes table
+    await this.dbInstance.execute(`
+      CREATE TABLE IF NOT EXISTS Processes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT CHECK (length(description) <= 500),
+        project_ids TEXT,
+        task_ids TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
       )
     `);
@@ -159,10 +214,6 @@ class Database {
     console.log('All tables initialized');
   }
 
-  /**
-   * Gets the Drizzle ORM database instance.
-   * @returns {OPSQLiteDatabase} Drizzle-wrapped database instance
-   */
   public getDB(): OPSQLiteDatabase {
     if (!this.drizzleInstance) {
       throw new Error('Drizzle instance not initialized');
@@ -176,6 +227,11 @@ class Database {
 export async function localDB() {
   const db = await Database.getInstance();
   return db.getDB()
+}
+
+export async function resetDB() {
+  const db = await Database.getInstance();
+  await db.reset();
 }
 
 

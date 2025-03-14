@@ -10,6 +10,7 @@ import {
   } from '@services/authService';
   import { User, NewUser } from '@models/User';
   import type { ControllerResponse } from '../types/response';
+import AsyncStorage from '@react-native-async-storage/async-storage';
   
   export class AuthController {
     /**
@@ -45,6 +46,16 @@ import {
         const user = await getUserById(id);
         if (!user) return { success: false, error: 'User not found' };
         return { success: true, data: user };
+      } catch (error) {
+        return { success: false, error: `Failed to get user: ${error}` };
+      }
+    }
+
+    async getCurrentUser(): Promise<ControllerResponse<User>> {
+      try {
+        const user = await AsyncStorage.getItem('currentUser');
+        if (!user) return { success: false, error: 'User not found' };
+        return JSON.parse(user)
       } catch (error) {
         return { success: false, error: `Failed to get user: ${error}` };
       }
