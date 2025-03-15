@@ -35,7 +35,10 @@ export type PersonalTask = {
   subtasks: Subtask[];
   reminders: Reminder[];
   projectId?: number | null;
+  milestoneId?: number | null;
   runRateValues?: RunRateValues | null;
+  taskType?: 'Small' | 'Medium' | 'Large';
+  points?: number;
 };
 
 export type PersonalTaskModalProps = {

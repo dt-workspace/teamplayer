@@ -9,7 +9,7 @@ import { Milestone } from '@models/Milestone';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 interface TaskFormProps {
-    projectId: number;
+    projectId?: number;
     userId: number;
     onClose: () => void;
     onSuccess: () => void;
@@ -30,6 +30,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ projectId, userId, onClose, onSucce
     const [showMilestoneDropdown, setShowMilestoneDropdown] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [taskId, setTaskId] = useState<number | null>(null);
+    const [isProjectTask, setIsProjectTask] = useState(!!projectId);
 
     const taskController = new TaskController();
 
@@ -94,6 +95,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ projectId, userId, onClose, onSucce
                 throw new Error('Task name is required');
             }
 
+            if (!taskType) {
+                throw new Error('Task type is required');
+            }
+
             const taskData: Omit<NewPersonalTask, 'userId'> = {
                 name,
                 dueDate: dueDate.toISOString(),
@@ -102,8 +107,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ projectId, userId, onClose, onSucce
                 status,
                 points: getPoints(taskType),
                 notes,
-                projectId,
-                milestoneId: selectedMilestoneId
+                projectId: isProjectTask ? projectId : null,
+                milestoneId: isProjectTask ? selectedMilestoneId : null
             };
 
             let result;
@@ -228,11 +233,25 @@ const TaskForm: React.FC<TaskFormProps> = ({ projectId, userId, onClose, onSucce
                     />
                 )}
 
-                <Text style={styles.label}>Milestone</Text>
-                <TouchableOpacity
-                    style={styles.dropdownButton}
-                    onPress={() => setShowMilestoneDropdown(!showMilestoneDropdown)}
-                >
+                <View style={styles.projectSection}>
+                    <Text style={styles.label}>Project Task</Text>
+                    <TouchableOpacity
+                        style={[styles.button, isProjectTask && styles.selectedButton]}
+                        onPress={() => setIsProjectTask(!isProjectTask)}
+                    >
+                        <Text style={[styles.buttonText, isProjectTask && styles.selectedButtonText]}>
+                            {isProjectTask ? 'Yes' : 'No'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {isProjectTask && (
+                    <>
+                        <Text style={styles.label}>Milestone</Text>
+                        <TouchableOpacity
+                            style={styles.dropdownButton}
+                            onPress={() => setShowMilestoneDropdown(!showMilestoneDropdown)}
+                        >
                     <Text>
                         {selectedMilestoneId 
                             ? milestones.find(m => m.id === selectedMilestoneId)?.name || 'Select Milestone'
@@ -277,7 +296,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ projectId, userId, onClose, onSucce
                 <Text style={styles.label}>Priority</Text>
                 {renderPriorityButtons()}
 
-                <Text style={styles.label}>Task Type</Text>
+                <Text style={styles.label}>Task Type *</Text>
                 {renderTaskTypeButtons()}
 
                 <Text style={styles.label}>Status</Text>
@@ -300,6 +319,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ projectId, userId, onClose, onSucce
                         <Text style={styles.submitButtonText}>{isEditing ? 'Update Task' : 'Create Task'}</Text>
                     </TouchableOpacity>
                 </View>
+                    </>
+                )}
             </View>
         </ScrollView>
     );
@@ -398,43 +419,46 @@ const styles = StyleSheet.create({
     submitButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '600'
+    },
+    projectSection: {
+        marginBottom: 16
     },
     dropdownButton: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         borderWidth: 1,
         borderColor: '#e0e0e0',
         borderRadius: 8,
         padding: 12,
-        backgroundColor: '#f8f8f8',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        backgroundColor: '#f8f8f8'
     },
     dropdownList: {
+        marginTop: 4,
         borderWidth: 1,
         borderColor: '#e0e0e0',
         borderRadius: 8,
-        backgroundColor: '#fff',
-        marginTop: 4,
-        maxHeight: 150,
+        backgroundColor: '#fff'
     },
     dropdownItem: {
         padding: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: '#e0e0e0'
     },
     dropdownItemText: {
         fontSize: 16,
+        color: '#4a4a4a'
     },
     loadingText: {
         padding: 12,
         textAlign: 'center',
-        color: '#888',
+        color: '#4a4a4a'
     },
     emptyText: {
         padding: 12,
         textAlign: 'center',
-        color: '#888',
+        color: '#4a4a4a',
+        fontWeight: '600'
     },
 });
 
