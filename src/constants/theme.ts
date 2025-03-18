@@ -31,10 +31,12 @@ export const colors = {
   card: '#FFFFFF',
   text: '#000000',
   textSecondary: '#8E8E93',
+  textTertiary: '#C7C7CC',
   border: '#C7C7CC',
   divider: '#E5E5EA',
   disabled: '#C7C7CC',
   placeholder: '#C7C7CC',
+  white: '#FFFFFF',
 };
 
 export const spacing = {
@@ -48,43 +50,94 @@ export const spacing = {
 
 export const typography = {
   fontSizes: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-    xxxl: 30,
+    xs: 10,    // For overline
+    sm: 12,    // For caption
+    md: 14,    // For body2, button, subtitle2
+    lg: 16,    // For body1
+    xl: 20,    // For h3
+    xxl: 24,   // For h2
+    xxxl: 30,  // For h1
   },
   fontWeights: {
-    regular: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
+    regular: '400',  // For body1, body2, caption
+    medium: '500',   // For overline, subtitle2
+    semibold: '600', // For button, h2, h3
+    bold: '700',     // For h1
   },
+  h1: {
+    fontSize: 30,
+    fontWeight: '700',
+    lineHeight: 36,
+  },
+  h2: {
+    fontSize: 24,
+    fontWeight: '600',
+    lineHeight: 32,
+  },
+  h3: {
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 28,
+  },
+  subtitle1: {
+    fontSize: 16,
+    fontWeight: '500',
+    lineHeight: 24,
+  },
+  subtitle2: {
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  body1: {
+    fontSize: 16,
+    fontWeight: '400',
+    lineHeight: 24,
+  },
+  body2: {
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 20,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 16,
+  },
+  button: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  overline: {
+    fontSize: 10,
+    fontWeight: '500',
+    lineHeight: 16,
+    textTransform: 'uppercase',
+  }
 };
 
 export const elevation = {
   small: {
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.18,
-    // shadowRadius: 1.0,
-    // elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 1.0,
+    elevation: 1,
   },
   medium: {
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.22,
-    // shadowRadius: 2.22,
-    // elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
   },
   large: {
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.30,
-    // shadowRadius: 4.65,
-    // elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
 };
 

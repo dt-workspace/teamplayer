@@ -5,6 +5,7 @@ import { MainTabParamList } from './types';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { TeamMemberDetailScreen, TeamsStackParamList } from '@screens/TeamMemberDetailScreen';
 import { ProjectDetailScreen } from '@screens/ProjectDetailScreen';
+import { TaskViewScreen } from '@screens/TaskViewScreen';
 
 const MainStack = createStackNavigator();
 const TeamsStack = createStackNavigator<TeamsStackParamList>();
@@ -26,6 +27,11 @@ const TeamsNavigator = () => {
       <TeamsStack.Screen
         name="ProjectDetailScreen"
         component={ProjectDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <TeamsStack.Screen
+        name="TaskViewScreen"
+        component={TaskViewScreen}
         options={{ headerShown: false }}
       />
     </TeamsStack.Navigator>

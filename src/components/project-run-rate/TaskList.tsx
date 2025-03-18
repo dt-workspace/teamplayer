@@ -1,11 +1,12 @@
 // src/components/project-run-rate/TaskList.tsx
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, typography, borderRadius, elevation } from '@constants/theme';
+import React, { useState } from 'react';
+import { View, StyleSheet, FlatList } from 'react-native';
+import { colors, spacing, elevation } from '@constants/theme';
 import { Task, TaskStatus } from './types';
 import { SearchBar } from './SearchBar';
 import { TaskItem } from './TaskItem';
+import { TaskFilters } from './TaskFilters';
+import { EmptyTasksView } from './EmptyTasksView';
 import { PersonalTask } from '@models/PersonalTask';
 
 type TaskListProps = {
@@ -118,36 +119,17 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   return (
     <View style={styles.tasksContainer}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.tasksTitle}>Tasks</Text>
-        <View style={styles.taskCountContainer}>
-          <Text style={styles.taskCount}>{filteredTasks.length}</Text>
-        </View>
-      </View>
+      <TaskFilters
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+        taskCount={filteredTasks.length}
+      />
       
-      {/* Search bar */}
       <SearchBar
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         onClearSearch={handleClearSearch}
       />
-      
-      {/* Filter buttons */}
-      <View style={styles.filterContainer}>
-        {(['All', 'To Do', 'In Progress', 'Completed'] as Array<TaskStatus | 'All'>).map(status => (
-          <TouchableOpacity
-            key={status}
-            style={[styles.filterButton, filterStatus === status && styles.filterButtonActive]}
-            onPress={() => setFilterStatus(status)}
-          >
-            <Text 
-              style={[styles.filterButtonText, filterStatus === status && styles.filterButtonTextActive]}
-            >
-              {status}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
       
       {filteredTasks.length > 0 ? (
         <FlatList
@@ -159,17 +141,10 @@ export const TaskList: React.FC<TaskListProps> = ({
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View style={styles.emptyTasksContainer}>
-          <Icon name="clipboard-text-outline" size={48} color={colors.textSecondary} />
-          <Text style={styles.emptyTasksText}>No tasks found</Text>
-          <Text style={styles.emptyTasksSubtext}>
-            {searchQuery ? 
-              `No results for "${searchQuery}"` : 
-              (filterStatus === 'All' 
-                ? 'Add tasks to track project run rate' 
-                : `No ${filterStatus} tasks available`)}
-          </Text>
-        </View>
+        <EmptyTasksView
+          searchQuery={searchQuery}
+          filterStatus={filterStatus}
+        />
       )}
     </View>
   );

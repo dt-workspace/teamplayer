@@ -108,11 +108,9 @@ import {
      */
     async getPersonalTasksByUser(
       userId: number,
-      startDate: string,
-      endDate: string
     ): Promise<ControllerResponse<PersonalTask[]>> {
       try {
-        const tasks = await getPersonalTasksByUser(userId, startDate, endDate);
+        const tasks = await getPersonalTasksByUser(userId);
         return { success: true, data: tasks };
       } catch (error) {
         return { success: false, error: `Failed to get tasks: ${error}` };

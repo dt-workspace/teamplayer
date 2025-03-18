@@ -20,13 +20,32 @@ export const createPersonalTask = async (
         const db = await localDB();
         if (!db) throw new Error('Database connection failed');
 
-        // Validate required fields
+        // Validate required fields and data types
         const requiredFields = ['name', 'dueDate', 'priority', 'status', 'taskType', 'points'];
         for (const field of requiredFields) {
-            if (!task[field]) {
-                throw new Error(`${field} is required`);
+            if (!task[field] || (field === 'dueDate' && !task[field].toString())) {
+                throw new Error(`${field} is required and must have a valid value`);
             }
         }
+
+        // Format data for SQLite
+        const formattedTask = {
+            name: task.name,
+            dueDate: task.dueDate.toString(),
+            priority: task.priority,
+            status: task.status,
+            taskType: task.taskType,
+            points: task.points,
+            category: task.category || null,
+            notes: task.notes || null,
+            subtasks: task.subtasks ? JSON.stringify(task.subtasks) : null,
+            projectId: task.projectId || null,
+            processId: task.processId || null,
+            milestoneId: task.milestoneId || null,
+            assignedToId: task.assignedToId || null
+        };
+
+        console.log('Task data is valid', formattedTask, userId);
 
         // Validate task type and points correlation
         const pointsMap = { Small: 1, Medium: 3, Large: 5 };
@@ -36,7 +55,7 @@ export const createPersonalTask = async (
 
         const [newTask] = await db
             .insert(personalTasks)
-            .values({ ...task, userId })
+            .values({ ...formattedTask, userId })
             .returning();
 
         if (!newTask) throw new Error('Failed to create task');
@@ -68,19 +87,13 @@ export const getPersonalTaskById = async (id: number): Promise<PersonalTask | nu
  */
 export const getPersonalTasksByUser = async (
     userId: number,
-    startDate: string,
-    endDate: string
 ): Promise<PersonalTask[]> => {
     const db = await localDB();
     return db
         .select()
         .from(personalTasks)
         .where(
-            and(
-                eq(personalTasks.userId, userId),
-                gte(personalTasks.dueDate, startDate),
-                lte(personalTasks.dueDate, endDate)
-            )
+            eq(personalTasks.userId, userId),
         );
 };
 

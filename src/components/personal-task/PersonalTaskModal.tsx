@@ -2,26 +2,27 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Modal,
-  TextInput,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { colors, spacing, typography, elevation, borderRadius } from '@constants/theme';
+import { colors, spacing, elevation } from '@constants/theme';
 import { ProjectSelector } from './ProjectSelector';
 import { RunRateTaskOptions } from './RunRateTaskOptions';
 import { Project } from '@models/Project';
 import { ProjectController } from '@controllers/ProjectController';
-import { PersonalTask, PersonalTaskModalProps, Reminder, RunRateValues } from './types';
+import { PersonalTask, PersonalTaskModalProps } from './types';
 import { TaskType, TaskStatus } from '@components/project-run-rate/types';
 import { authController } from '@controllers/index';
+import { FormFields } from './components/FormFields';
+import { DateTimeField } from './components/DateTimeField';
+import { SubtaskManager } from './components/SubtaskManager';
+import { ReminderManager } from './components/ReminderManager';
 
 export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
   visible,
@@ -29,7 +30,7 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
   onSave,
   initialTask,
 }) => {
-  // Initialize task state with defaults or initial values
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [task, setTask] = useState<PersonalTask>({
     name: initialTask?.name || '',
     dueDate: initialTask?.dueDate || new Date(),
@@ -42,29 +43,23 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
     reminders: initialTask?.reminders || [],
     projectId: initialTask?.projectId || null,
     runRateValues: initialTask?.runRateValues || null,
+    taskType: initialTask?.taskType || 'Small',
+    points: initialTask?.points || 1
   });
 
-  // State for date/time picker
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  
-  // State for new subtask and reminder
   const [newSubtaskName, setNewSubtaskName] = useState('');
   const [newReminderDate, setNewReminderDate] = useState(new Date());
   const [showReminderDatePicker, setShowReminderDatePicker] = useState(false);
   const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
-  
-  // State for project selection
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  
-  // State for run rate values
   const [runRateTaskType, setRunRateTaskType] = useState<TaskType>('Small');
   const [runRateTaskStatus, setRunRateTaskStatus] = useState<TaskStatus>('To Do');
-  
-  // Project controller for fetching projects
+
   const projectController = new ProjectController();
-  
+
   // Handle date change
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -153,15 +148,6 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
     setTask({ ...task, reminders: updatedReminders });
   };
 
-  // Format date for display
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString();
-  };
-
-  // Format time for display
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
 
   // Load projects when component mounts
   useEffect(() => {
@@ -179,11 +165,11 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
     try {
       setIsLoadingProjects(true);
       const user = await authController.getCurrentUser();
-      if(!user) {
+      if (!user) {
         return;
       }
       const response = await projectController.getProjectsByUser(user?.id);
-      
+
       if (response.success && response.data) {
         // Filter projects based on search query
         const filteredProjects = response.data.filter(project =>
@@ -195,6 +181,53 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
       console.error('Error searching projects:', error);
     } finally {
       setIsLoadingProjects(false);
+    }
+  };
+
+  // Validate form fields
+  const validateForm = () => {
+    const newErrors = {
+      name: '',
+      dueDate: '',
+      priority: '',
+      status: '',
+      taskType: '',
+      points: ''
+    };
+
+    if (!task.name.trim()) {
+      newErrors.name = 'Task name is required';
+    }
+
+    if (!task.dueDate) {
+      newErrors.dueDate = 'Due date is required';
+    }
+
+    if (!task.priority) {
+      newErrors.priority = 'Priority is required';
+    }
+
+    if (!task.status) {
+      newErrors.status = 'Status is required';
+    }
+
+    if (!task.taskType) {
+      newErrors.taskType = 'Task type is required';
+    }
+
+    if (task.points < 1) {
+      newErrors.points = 'Points must be greater than 0';
+    }
+
+    setErrors(newErrors);
+    return Object.values(newErrors).every(error => !error);
+  };
+
+  // Handle form submission
+  const handleSubmit = () => {
+    if (validateForm()) {
+      onSave(task);
+      onClose();
     }
   };
 
@@ -259,10 +292,20 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
     }
   };
 
+
+
+
   // Handle save
   const handleSave = () => {
-    onSave(task);
-    onClose();
+    if (validateForm()) {
+      const taskToSave = {
+        ...task,
+        taskType: task.runRateValues?.type || task.taskType,
+        points: task.runRateValues?.points || getPointsForTaskType(task.taskType as TaskType)
+      };
+      onSave(taskToSave);
+      onClose();
+    }
   };
 
   return (
@@ -276,475 +319,66 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalContainer}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Personal Task</Text>
-              <TouchableOpacity onPress={onClose}>
-                <Icon name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+        <FormFields
+          task={task}
+          setTask={setTask}
+          errors={errors}
+        />
 
-            <ScrollView style={styles.formContainer}>
-              {/* Task Name */}
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Task Name*</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={task.name}
-                  onChangeText={(text) => setTask({ ...task, name: text })}
-                  placeholder="Enter task name"
-                  placeholderTextColor={colors.placeholder}
-                />
-              </View>
+        <DateTimeField
+          date={task.dueDate}
+          showDatePicker={showDatePicker}
+          showTimePicker={showTimePicker}
+          setShowDatePicker={setShowDatePicker}
+          setShowTimePicker={setShowTimePicker}
+          onDateChange={handleDateChange}
+          onTimeChange={handleTimeChange}
+          error={errors.dueDate}
+        />
 
-              {/* Project Selector */}
-              <ProjectSelector
-                selectedProjectId={task.projectId}
-                onSelectProject={handleSelectProject}
-                projects={projects}
-                isLoading={isLoadingProjects}
-                onSearchProjects={handleSearchProjects}
-              />
+        <SubtaskManager
+          subtasks={task.subtasks}
+          newSubtaskName={newSubtaskName}
+          setNewSubtaskName={setNewSubtaskName}
+          onAddSubtask={addSubtask}
+          onToggleSubtask={toggleSubtaskCompletion}
+          onRemoveSubtask={removeSubtask}
+        />
 
-              {/* Run Rate Values (only shown when a project is selected) */}
-              {task.projectId && (
-                <RunRateTaskOptions
-                  taskType={task.runRateValues?.type || runRateTaskType}
-                  taskStatus={task.runRateValues?.status || runRateTaskStatus}
-                  onTaskTypeChange={handleRunRateTaskTypeChange}
-                  onTaskStatusChange={handleRunRateTaskStatusChange}
-                  getPointsForTaskType={getPointsForTaskType}
-                />
-              )}
+        <ReminderManager
+          reminders={task.reminders}
+          newReminderDate={newReminderDate}
+          showDatePicker={showReminderDatePicker}
+          showTimePicker={showReminderTimePicker}
+          setShowDatePicker={setShowReminderDatePicker}
+          setShowTimePicker={setShowReminderTimePicker}
+          onDateChange={handleReminderDateChange}
+          onTimeChange={handleReminderTimeChange}
+          onAddReminder={addReminder}
+          onRemoveReminder={removeReminder}
+        />
 
-              {/* Due Date & Time */}
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Due Date & Time</Text>
-                <View style={styles.dateTimeContainer}>
-                  <TouchableOpacity 
-                    style={styles.dateTimeButton}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Icon name="calendar" size={20} color={colors.primary} />
-                    <Text style={styles.dateTimeText}>{formatDate(task.dueDate)}</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.dateTimeButton}
-                    onPress={() => setShowTimePicker(true)}
-                  >
-                    <Icon name="clock-outline" size={20} color={colors.primary} />
-                    <Text style={styles.dateTimeText}>{formatTime(task.dueDate)}</Text>
-                  </TouchableOpacity>
-                </View>
 
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={task.dueDate}
-                    mode="date"
-                    display="default"
-                    onChange={handleDateChange}
-                  />
-                )}
 
-                {showTimePicker && (
-                  <DateTimePicker
-                    value={task.dueDate}
-                    mode="time"
-                    display="default"
-                    onChange={handleTimeChange}
-                  />
-                )}
-              </View>
-              </ScrollView>
 
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={onClose}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.saveButton}
-                onPress={handleSave}
-                disabled={!task.name.trim()}
-              >
-                <Text style={styles.saveButtonText}>Save Task</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+
+        <View style={styles.modalFooter}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={onClose}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={!task.name.trim()}
+          >
+            <Text style={styles.saveButtonText}>Save Task</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 };
 
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
-    padding: spacing.lg,
-    maxHeight: '90%',
-    ...elevation.large,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  modalTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-  },
-  formContainer: {
-    maxHeight: '80%',
-  },
-  formGroup: {
-    marginBottom: spacing.lg,
-  },
-  formLabel: {
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  textInput: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  dateTimeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dateTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    flex: 1,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  dateTimeText: {
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    marginLeft: spacing.sm,
-  },
-  prioritySelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  priorityOption: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    marginHorizontal: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  priorityOptionSelected: {
-    borderWidth: 0,
-  },
-  priorityOptionText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.text,
-  },
-  priorityOptionTextSelected: {
-    color: colors.card,
-    fontWeight: typography.fontWeights.medium,
-  },
-  categorySelector: {
-    flexDirection: 'row',
-    marginBottom: spacing.xs,
-  },
-  categoryOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  categoryOptionSelected: {
-    backgroundColor: colors.primary,
-    borderWidth: 0,
-  },
-  categoryOptionText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.text,
-    marginLeft: spacing.xs,
-  },
-  categoryOptionTextSelected: {
-    color: colors.card,
-    fontWeight: typography.fontWeights.medium,
-  },
-  statusSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  statusOption: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    marginHorizontal: spacing.xs,
-    marginBottom: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: '48%',
-  },
-  statusOptionSelected: {
-    borderWidth: 0,
-  },
-  statusOptionText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.text,
-  },
-  statusOptionTextSelected: {
-    color: colors.card,
-    fontWeight: typography.fontWeights.medium,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressPercentage: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-  },
-  progressBarContainer: {
-    height: 8,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.round,
-    marginVertical: spacing.sm,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.round,
-  },
-  progressSliderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-  },
-  progressSliderMark: {
-    alignItems: 'center',
-  },
-  progressSliderDot: {
-    width: 12,
-    height: 12,
-    borderRadius: borderRadius.round,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.xs,
-  },
-  progressSliderDotActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  progressSliderValue: {
-    fontSize: typography.fontSizes.xs,
-    color: colors.textSecondary,
-  },
-  textArea: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
-    height: 100,
-  },
-  characterCount: {
-    fontSize: typography.fontSizes.xs,
-    color: colors.textSecondary,
-    textAlign: 'right',
-    marginTop: spacing.xs,
-  },
-  subtaskInputContainer: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  subtaskInput: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
-  },
-  addSubtaskButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.sm,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  subtaskList: {
-    marginTop: spacing.sm,
-  },
-  subtaskItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    marginBottom: spacing.xs,
-  },
-  subtaskCheckbox: {
-    marginRight: spacing.sm,
-  },
-  subtaskName: {
-    flex: 1,
-    fontSize: typography.fontSizes.md,
-    color: colors.text,
-  },
-  subtaskNameCompleted: {
-    textDecorationLine: 'line-through',
-    color: colors.textSecondary,
-  },
-  removeSubtaskButton: {
-    padding: spacing.xs,
-  },
-  reminderInputContainer: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  reminderDateTimeContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    marginRight: spacing.sm,
-  },
-  reminderDateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    flex: 1,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  reminderTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  addReminderButton: {
-    backgroundColor: colors.secondary,
-    borderRadius: borderRadius.sm,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reminderList: {
-    marginTop: spacing.sm,
-  },
-  reminderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    marginBottom: spacing.xs,
-  },
-  reminderInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reminderDateTime: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.text,
-    marginLeft: spacing.sm,
-  },
-  removeReminderButton: {
-    padding: spacing.xs,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.md,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cancelButtonText: {
-    color: colors.text,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.sm,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: colors.card,
-    fontSize: typography.fontSizes.md,
-    fontWeight: typography.fontWeights.medium,
-  },
-});

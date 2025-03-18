@@ -17,12 +17,14 @@ import { TeamMember } from '@models/TeamMember';
 import { TeamController } from '@controllers/TeamController';
 import { colors, spacing, typography, elevation, borderRadius } from '@constants/theme';
 import { RBSheetTeamMemberForm } from '@components/RBSheetTeamMemberForm';
+import { Task } from '@components/project-run-rate/types';
 
 // Define the params for the Teams stack navigator
 export type TeamsStackParamList = {
   TeamsList: { editMemberId?: number };
   TeamMemberDetail: { memberId: number };
   ProjectDetailScreen: { projectId: number };
+  TaskViewScreen: { task: Task };
 };
 
 type TeamMemberDetailScreenProps = {

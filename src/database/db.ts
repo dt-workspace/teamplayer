@@ -257,6 +257,16 @@ export async function resetDB() {
   await db.reset();
 }
 
+export async function closeDB() {
+  const db = await Database.getInstance();
+  await db.close();
+}
+
+export async function getDB() {
+  const db = await Database.getInstance();
+  return db.getDBInstance();
+}
+
 
 // Export type for use in other modules
 export type { OPSQLiteDatabase };
