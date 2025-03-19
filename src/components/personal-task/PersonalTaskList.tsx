@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Image, ImageBackground } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TaskListProps, PersonalTask } from './components/types';
 import SearchSection from './components/SearchSection';
@@ -8,6 +8,49 @@ import { TaskItem } from './components/TaskItem';
 import { styles } from './components/styles';
 import { useTaskManager } from './hooks/useTaskManager';
 import { colors } from '@constants/theme';
+
+// Header Section Component
+const HeaderSection = ({ taskCount, onAddTask, onImportTasks, isImporting }) => (
+  <View style={styles.modernHeader}>
+    <ImageBackground
+      source={{ uri: 'https://img.freepik.com/free-vector/gradient-white-monochrome-background_23-2149011361.jpg' }}
+      style={styles.headerBackground}
+      imageStyle={styles.headerBackgroundImage}
+    >
+      <View style={styles.headerContent}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.modernTitle}>My Tasks</Text>
+          <Text style={styles.headerSubtitle}>
+            You have <Text style={styles.highlightText}>{taskCount}</Text> tasks to complete
+          </Text>
+        </View>
+
+        <View style={styles.headerIllustration}>
+          <Image 
+            source={{ uri: 'https://img.freepik.com/free-vector/task-concept-illustration_114360-1715.jpg' }}
+            style={styles.illustrationImage}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+
+      <View style={styles.headerButtonsContainer}>
+        <TouchableOpacity 
+          style={styles.modernImportButton} 
+          onPress={onImportTasks}
+          disabled={isImporting}
+        >
+          <Icon name="database-import" size={18} color={colors.card} />
+          <Text style={styles.buttonText}>Import</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.modernAddButton} onPress={onAddTask}>
+          <Icon name="plus" size={18} color={colors.card} />
+          <Text style={styles.buttonText}>Add Task</Text>
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>
+  </View>
+);
 
 export const PersonalTaskList: React.FC<TaskListProps> = ({
   tasks,
@@ -43,21 +86,12 @@ export const PersonalTaskList: React.FC<TaskListProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Tasks</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            style={styles.importButton} 
-            onPress={handleImportTasks}
-            disabled={isImporting}
-          >
-            <Icon name="database-import" size={18} color={colors.card} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={onAddTask}>
-            <Icon name="plus" size={22} color={colors.card} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <HeaderSection 
+        taskCount={sortedTasks.length}
+        onAddTask={onAddTask}
+        onImportTasks={handleImportTasks}
+        isImporting={isImporting}
+      />
 
       <SearchSection
         searchQuery={searchQuery}
