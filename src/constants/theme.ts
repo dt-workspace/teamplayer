@@ -9,7 +9,7 @@ export const colors = {
   // Primary colors
   primary: '#007AFF',
   primaryDark: '#0062CC',
-  primaryLight: '#66AFFF',
+  primaryLight: '#70a9d4',     // Light variant of primary color
   
   // Secondary colors
   secondary: '#FF9500',
@@ -18,8 +18,11 @@ export const colors = {
   
   // Status colors
   success: '#34C759',
+  successLight: '#70d49f',     // Light variant of success color
   error: '#FF3B30',
+  errorLight: '#ff7c7c',       // Light variant of error color
   warning: '#FFCC00',
+  warningLight: '#f0c170',     // Light variant of warning color
   info: '#5AC8FA',
   
   // Status indicators
@@ -28,6 +31,7 @@ export const colors = {
   
   // Neutral colors
   background: '#F2F2F7',
+  backgroundSecondary: '#f5f5f7', // Secondary background for subtle components
   card: '#FFFFFF',
   text: '#000000',
   textSecondary: '#8E8E93',
@@ -118,6 +122,16 @@ export const typography = {
 };
 
 export const elevation = {
+  tiny: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 1.0,
+    elevation: 1,
+  },
   small: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

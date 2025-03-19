@@ -1,19 +1,25 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, spacing, typography, borderRadius } from '@constants/theme';
 import { TaskPriority, PersonalTaskStatus } from '../types';
+
+// Task categories
+export type TaskCategory = 'Admin' | 'Meetings' | 'Development' | 'Design' | 'Research' | 'Other';
 
 interface FormFieldsProps {
   name: string;
   priority: TaskPriority;
   status: PersonalTaskStatus;
   taskType: 'Small' | 'Medium' | 'Large';
+  category: TaskCategory;
   notes: string;
   errors: Record<string, string>;
   onNameChange: (value: string) => void;
   onPriorityChange: (value: TaskPriority) => void;
   onStatusChange: (value: PersonalTaskStatus) => void;
   onTaskTypeChange: (value: 'Small' | 'Medium' | 'Large') => void;
+  onCategoryChange: (value: TaskCategory) => void;
   onNotesChange: (value: string) => void;
 }
 
@@ -22,112 +28,230 @@ export const FormFields: React.FC<FormFieldsProps> = ({
   priority,
   status,
   taskType,
+  category,
   notes,
   errors,
   onNameChange,
   onPriorityChange,
   onStatusChange,
   onTaskTypeChange,
+  onCategoryChange,
   onNotesChange,
 }) => {
-  const renderPriorityButtons = () => {
-    const priorities: TaskPriority[] = ['High', 'Medium', 'Low'];
-    return (
-      <View style={styles.buttonGroup}>
-        {priorities.map((p) => (
-          <TouchableOpacity
-            key={p}
-            style={[styles.button, priority === p && styles.selectedButton]}
-            onPress={() => onPriorityChange(p)}
-          >
-            <Text style={[styles.buttonText, priority === p && styles.selectedButtonText]}>
-              {p}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
+  // Priority configuration
+  const priorityIcons: Record<TaskPriority, string> = {
+    High: 'alert-circle',
+    Medium: 'alert',
+    Low: 'alert-circle-outline',
   };
 
-  const renderTaskTypeButtons = () => {
-    const types: Array<'Small' | 'Medium' | 'Large'> = ['Small', 'Medium', 'Large'];
-    return (
-      <View style={styles.buttonGroup}>
-        {types.map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.button, taskType === t && styles.selectedButton]}
-            onPress={() => onTaskTypeChange(t)}
-          >
-            <Text style={[styles.buttonText, taskType === t && styles.selectedButtonText]}>
-              {t}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
+  const priorityColors: Record<TaskPriority, string> = {
+    High: colors.error || '#f44336',
+    Medium: colors.warning || '#ff9800',
+    Low: colors.success || '#4caf50',
   };
 
-  const renderStatusButtons = () => {
-    const statuses: PersonalTaskStatus[] = ['To Do', 'In Progress', 'Completed', 'On Hold'];
-    return (
-      <View style={styles.buttonGroup}>
-        {statuses.map((s) => (
-          <TouchableOpacity
-            key={s}
-            style={[styles.button, status === s && styles.selectedButton]}
-            onPress={() => onStatusChange(s)}
-          >
-            <Text style={[styles.buttonText, status === s && styles.selectedButtonText]}>
-              {s}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
+  // Task type configuration
+  const taskTypeIcons: Record<'Small' | 'Medium' | 'Large', string> = {
+    Small: 'circle-small',
+    Medium: 'circle-medium',
+    Large: 'circle-large',
+  };
+
+  // Status configuration
+  const statusIcons: Record<PersonalTaskStatus, string> = {
+    'To Do': 'clock-outline',
+    'In Progress': 'progress-check',
+    'Completed': 'check-circle',
+    'On Hold': 'pause-circle',
+  };
+
+  const statusColors: Record<PersonalTaskStatus, string> = {
+    'To Do': colors.textSecondary || '#757575',
+    'In Progress': colors.primary || '#2196f3',
+    'Completed': colors.success || '#4caf50',
+    'On Hold': colors.warning || '#ff9800',
+  };
+  
+  // Category configuration
+  const categoryIcons: Record<TaskCategory, string> = {
+    'Admin': 'file-document-outline',
+    'Meetings': 'account-group',
+    'Development': 'code-braces',
+    'Design': 'palette-outline',
+    'Research': 'magnify',
+    'Other': 'dots-horizontal',
   };
 
   return (
     <View style={styles.container}>
+      {/* Task Name Field */}
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Task Name</Text>
-        <TextInput
-          style={[styles.input, errors.name && styles.inputError]}
-          value={name}
-          onChangeText={onNameChange}
-          placeholder="Enter task name"
-        />
-        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+        <View style={[styles.inputWrapper, errors.name && styles.inputError]}>
+          <Icon name="format-title" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={onNameChange}
+            placeholder="Enter task name"
+            placeholderTextColor={colors.textSecondary}
+            autoCapitalize="sentences"
+          />
+        </View>
+        {errors.name && (
+          <Text style={styles.errorText}>
+            <Icon name="alert-circle" size={14} color={colors.error} /> {errors.name}
+          </Text>
+        )}
       </View>
 
+      {/* Priority Selection */}
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Priority</Text>
-        {renderPriorityButtons()}
+        <View style={styles.priorityButtons}>
+          {(['High', 'Medium', 'Low'] as TaskPriority[]).map((p) => (
+            <TouchableOpacity
+              key={p}
+              style={[
+                styles.priorityButton, 
+                priority === p && { 
+                  backgroundColor: `${priorityColors[p]}20`, // 20% opacity
+                  borderColor: priorityColors[p]
+                }
+              ]}
+              onPress={() => onPriorityChange(p)}
+            >
+              <Icon 
+                name={priorityIcons[p]} 
+                size={18} 
+                color={priorityColors[p]} 
+                style={styles.priorityIcon} 
+              />
+              <Text style={[
+                styles.priorityText, 
+                { color: priority === p ? priorityColors[p] : colors.textSecondary },
+                priority === p && styles.activePriorityText
+              ]}>
+                {p}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         {errors.priority && <Text style={styles.errorText}>{errors.priority}</Text>}
       </View>
 
+      {/* Task Type Selection */}
       <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Task Type</Text>
-        {renderTaskTypeButtons()}
+        <Text style={styles.label}>Task Size</Text>
+        <View style={styles.taskTypeButtons}>
+          {(['Small', 'Medium', 'Large'] as Array<'Small' | 'Medium' | 'Large'>).map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={[
+                styles.taskTypeButton, 
+                taskType === t && styles.activeTaskTypeButton
+              ]}
+              onPress={() => onTaskTypeChange(t)}
+            >
+              <Icon 
+                name={taskTypeIcons[t]} 
+                size={t === 'Small' ? 16 : t === 'Medium' ? 20 : 24} 
+                color={taskType === t ? colors.primary : colors.textSecondary} 
+              />
+              <Text style={[
+                styles.taskTypeText,
+                taskType === t && styles.activeTaskTypeText
+              ]}>
+                {t}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         {errors.taskType && <Text style={styles.errorText}>{errors.taskType}</Text>}
       </View>
 
+      {/* Category Selection */}
+      <View style={styles.fieldContainer}>
+        <Text style={styles.label}>Category</Text>
+        <View style={styles.categoryButtons}>
+          {(['Admin', 'Meetings', 'Development', 'Design', 'Research', 'Other'] as TaskCategory[]).map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.categoryButton, 
+                category === cat && styles.activeCategoryButton
+              ]}
+              onPress={() => onCategoryChange(cat)}
+            >
+              <Icon 
+                name={categoryIcons[cat]} 
+                size={18} 
+                color={category === cat ? colors.primary : colors.textSecondary} 
+                style={styles.categoryIcon} 
+              />
+              <Text style={[
+                styles.categoryText,
+                category === cat && styles.activeCategoryText
+              ]}>
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+      </View>
+
+      {/* Status Selection */}
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Status</Text>
-        {renderStatusButtons()}
+        <View style={styles.statusButtons}>
+          {(['To Do', 'In Progress', 'Completed', 'On Hold'] as PersonalTaskStatus[]).map((s) => (
+            <TouchableOpacity
+              key={s}
+              style={[
+                styles.statusButton, 
+                status === s && { 
+                  backgroundColor: `${statusColors[s]}20`,  // 20% opacity
+                  borderColor: statusColors[s]
+                }
+              ]}
+              onPress={() => onStatusChange(s)}
+            >
+              <Icon 
+                name={statusIcons[s]} 
+                size={18} 
+                color={status === s ? statusColors[s] : colors.textSecondary} 
+                style={styles.statusIcon} 
+              />
+              <Text style={[
+                styles.statusText,
+                { color: status === s ? statusColors[s] : colors.textSecondary },
+                status === s && styles.activeStatusText
+              ]}>
+                {s}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         {errors.status && <Text style={styles.errorText}>{errors.status}</Text>}
       </View>
 
+      {/* Notes Field */}
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Notes</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={notes}
-          onChangeText={onNotesChange}
-          placeholder="Add notes"
-          multiline
-          numberOfLines={4}
-        />
+        <View style={styles.notesInputWrapper}>
+          <TextInput
+            style={styles.notesInput}
+            value={notes}
+            onChangeText={onNotesChange}
+            placeholder="Add notes about this task..."
+            placeholderTextColor={colors.textSecondary}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+        </View>
       </View>
     </View>
   );
@@ -135,56 +259,173 @@ export const FormFields: React.FC<FormFieldsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.medium,
+    paddingBottom: spacing.md,
   },
   fieldContainer: {
-    marginBottom: spacing.medium,
+    marginBottom: spacing.md,
   },
   label: {
-    ...typography.label,
-    marginBottom: spacing.small,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: borderRadius.small,
-    padding: spacing.small,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
     backgroundColor: colors.white,
+  },
+  inputIcon: {
+    marginRight: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    padding: 0, // Remove default padding in some platforms
   },
   inputError: {
     borderColor: colors.error,
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+  errorText: {
+    fontSize: 12,
+    color: colors.error,
+    marginTop: 4,
   },
-  buttonGroup: {
+  // Priority styles
+  priorityButtons: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.small,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  button: {
-    paddingVertical: spacing.small,
-    paddingHorizontal: spacing.medium,
-    borderRadius: borderRadius.small,
+  priorityButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.white,
   },
-  selectedButton: {
-    backgroundColor: colors.primary,
+  priorityIcon: {
+    marginRight: 4,
+  },
+  priorityText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  activePriorityText: {
+    fontWeight: '600',
+  },
+  // Task type styles
+  taskTypeButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  taskTypeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+  },
+  activeTaskTypeButton: {
+    backgroundColor: `${colors.primary}15`, // 15% opacity
     borderColor: colors.primary,
   },
-  buttonText: {
-    ...typography.body,
+  taskTypeText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginLeft: 4,
+  },
+  activeTaskTypeText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  // Status styles
+  statusButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  statusButton: {
+    flexGrow: 1,
+    flexBasis: '45%', // Approx. 2 per row with gap
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+    marginBottom: spacing.xs,
+  },
+  statusIcon: {
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 14,
+  },
+  activeStatusText: {
+    fontWeight: '600',
+  },
+  // Notes styles
+  notesInputWrapper: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.white,
+  },
+  notesInput: {
+    minHeight: 80,
+    fontSize: 14,
     color: colors.text,
+    padding: spacing.sm,
   },
-  selectedButtonText: {
-    color: colors.white,
+  // Category styles
+  categoryButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
-  errorText: {
-    ...typography.caption,
-    color: colors.error,
-    marginTop: spacing.xsmall,
+  categoryButton: {
+    flexGrow: 1,
+    flexBasis: '30%', // Approx. 3 per row with gap
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+    marginBottom: spacing.xs,
+  },
+  activeCategoryButton: {
+    backgroundColor: `${colors.primary}15`, // 15% opacity
+    borderColor: colors.primary,
+  },
+  categoryIcon: {
+    marginRight: 4,
+  },
+  categoryText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  activeCategoryText: {
+    color: colors.primary,
+    fontWeight: '600',
   },
 });

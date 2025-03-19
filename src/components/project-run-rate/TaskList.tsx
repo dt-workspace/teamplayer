@@ -1,7 +1,7 @@
 // src/components/project-run-rate/TaskList.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
-import { colors, spacing, elevation } from '@constants/theme';
+import { colors, spacing, elevation, typography, borderRadius } from '@constants/theme';
 import { Task, TaskStatus } from './types';
 import { SearchBar } from './SearchBar';
 import { TaskItem } from './TaskItem';

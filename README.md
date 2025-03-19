@@ -1,8 +1,40 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# TeamPlayer
+
+TeamPlayer is a React Native mobile application designed for team collaboration and project management. The app helps teams track projects, milestones, tasks, and team member availability.
+
+## Features
+
+- **Project Management**: Create, update, and track projects with progress indicators
+- **Milestone Tracking**: Break down projects into milestones with deadlines and status updates
+- **Task Management**: Manage tasks within milestones, track completion status
+- **Team Collaboration**: Add team members to projects with specific roles
+- **Availability Tracking**: Manage team member availability for better resource planning
+- **Performance Metrics**: Monitor project pace and progress with PRR (current pace) and RPRR (required pace) indicators
+
+## Technology Stack
+
+- **Framework**: React Native 0.78.0
+- **Language**: TypeScript
+- **State Management**: React Context API and Hooks
+- **Navigation**: React Navigation
+- **UI Components**: Custom components and React Native Vector Icons
+- **Data Storage**: AsyncStorage
+- **Animations**: React Native Reanimated
 
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+
+## Environment Setup
+
+Before running the app, make sure you have the following:
+
+- Node.js (v14 or newer)
+- Watchman (for macOS users)
+- JDK 11 or newer
+- Android Studio and Android SDK (for Android development)
+- Xcode (for iOS development, macOS only)
+- CocoaPods (for iOS development)
 
 ## Step 1: Start Metro
 

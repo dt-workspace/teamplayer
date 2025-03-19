@@ -26,7 +26,6 @@ export type PersonalTask = {
   status: TaskStatus;
   progress: number;
   subtasks: Subtask[];
-  reminders: Reminder[];
 };
 
 export type FilterOptions = {

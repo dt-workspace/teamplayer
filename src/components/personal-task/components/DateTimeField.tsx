@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors, spacing, typography, borderRadius } from '@constants/theme';
 import { formatDate, formatTime } from './utils';
@@ -25,32 +26,96 @@ export const DateTimeField: React.FC<DateTimeFieldProps> = ({
   onShowDatePicker,
   onShowTimePicker,
 }) => {
+  // Check if due date is in the past
+  const isPastDue = new Date() > dueDate;
+
+  // Calculate days remaining
+  const daysRemaining = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Due Date and Time</Text>
       <View style={styles.dateTimeContainer}>
         <TouchableOpacity
-          style={[styles.dateTimeButton, error && styles.dateTimeButtonError]}
+          style={[
+            styles.dateButton, 
+            error && styles.dateTimeButtonError,
+            isPastDue && styles.pastDueDateButton
+          ]}
           onPress={onShowDatePicker}
         >
-          <Text style={styles.dateTimeText}>{formatDate(dueDate)}</Text>
+          <Icon 
+            name="calendar" 
+            size={20} 
+            color={isPastDue ? colors.error : colors.primary} 
+            style={styles.buttonIcon} 
+          />
+          <Text style={[
+            styles.dateTimeText,
+            isPastDue && styles.pastDueText
+          ]}>
+            {formatDate(dueDate)}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.dateTimeButton, error && styles.dateTimeButtonError]}
+          style={[
+            styles.timeButton, 
+            error && styles.dateTimeButtonError,
+            isPastDue && styles.pastDueDateButton
+          ]}
           onPress={onShowTimePicker}
         >
-          <Text style={styles.dateTimeText}>{formatTime(dueDate)}</Text>
+          <Icon 
+            name="clock-outline" 
+            size={20} 
+            color={isPastDue ? colors.error : colors.primary} 
+            style={styles.buttonIcon} 
+          />
+          <Text style={[
+            styles.dateTimeText,
+            isPastDue && styles.pastDueText
+          ]}>
+            {formatTime(dueDate)}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <Text style={styles.errorText}>
+          <Icon name="alert-circle" size={14} color={colors.error} /> {error}
+        </Text>
+      )}
+
+      {!error && (
+        <View style={styles.timeRemaining}>
+          <Icon 
+            name={isPastDue ? "alert" : "information-outline"} 
+            size={16} 
+            color={isPastDue ? colors.error : colors.textSecondary} 
+          />
+          <Text style={[
+            styles.timeRemainingText,
+            isPastDue && styles.pastDueRemainingText
+          ]}>
+            {isPastDue 
+              ? `Overdue by ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''}`
+              : daysRemaining === 0 
+                ? "Due today" 
+                : daysRemaining === 1 
+                  ? "Due tomorrow" 
+                  : `${daysRemaining} days remaining`
+            }
+          </Text>
+        </View>
+      )}
 
       {showDatePicker && (
         <DateTimePicker
           value={dueDate}
           mode="date"
           onChange={onDateChange}
+          minimumDate={new Date(new Date().setDate(new Date().getDate() - 30))} // Allow dates up to 30 days in the past
         />
       )}
 
@@ -67,34 +132,73 @@ export const DateTimeField: React.FC<DateTimeFieldProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.medium,
+    marginBottom: spacing.lg,
   },
   label: {
-    ...typography.label,
-    marginBottom: spacing.small,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   dateTimeContainer: {
     flexDirection: 'row',
-    gap: spacing.small,
+    gap: spacing.sm,
   },
-  dateTimeButton: {
+  dateButton: {
     flex: 1,
-    padding: spacing.small,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: borderRadius.small,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.white,
+  },
+  timeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.white,
+  },
+  buttonIcon: {
+    marginRight: spacing.sm,
+  },
+  dateTimeText: {
+    fontSize: 14,
+    color: colors.text,
   },
   dateTimeButtonError: {
     borderColor: colors.error,
   },
-  dateTimeText: {
-    ...typography.body,
-    textAlign: 'center',
+  pastDueDateButton: {
+    borderColor: colors.error,
+    backgroundColor: colors.lightError || '#ffebee', // Fallback if lightError is not defined
+  },
+  pastDueText: {
+    color: colors.error,
   },
   errorText: {
-    ...typography.caption,
+    fontSize: 12,
     color: colors.error,
-    marginTop: spacing.xsmall,
+    marginTop: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timeRemaining: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  timeRemainingText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginLeft: spacing.xs,
+  },
+  pastDueRemainingText: {
+    color: colors.error,
   },
 });

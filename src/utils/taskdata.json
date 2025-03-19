@@ -1,0 +1,422 @@
+[
+  {
+    "id": 1,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Implement user authentication with OAuth 2.0",
+    "dueDate": "2024-08-15T10:00:00.000Z",
+    "priority": "High",
+    "category": "Development",
+    "status": "In Progress",
+    "taskType": "Large",
+    "points": 5,
+    "notes": "Integrate Google, Facebook, and GitHub OAuth providers. Ensure proper token handling and user session management. Follow security best practices.",
+    "subtasks": [
+      {
+        "id": "1742412001001",
+        "name": "Set up OAuth libraries",
+        "completed": true
+      },
+      {
+        "id": "1742412001002",
+        "name": "Implement Google login",
+        "completed": true
+      },
+      {
+        "id": "1742412001003",
+        "name": "Implement Facebook login",
+        "completed": false
+      },
+      {
+        "id": "1742412001004",
+        "name": "Implement GitHub login",
+        "completed": false
+      },
+      {
+        "id": "1742412001005",
+        "name": "Create unified auth service",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 40
+  },
+  {
+    "id": 2,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Fix responsive layout issues on mobile devices",
+    "dueDate": "2024-07-28T16:30:00.000Z",
+    "priority": "Medium",
+    "category": "Design",
+    "status": "To Do",
+    "taskType": "Medium",
+    "points": 3,
+    "notes": "Several components are breaking on mobile view. Focus on navigation menu, data tables, and form elements.",
+    "subtasks": [
+      {
+        "id": "1742412002001",
+        "name": "Fix navigation menu collapse",
+        "completed": false
+      },
+      {
+        "id": "1742412002002",
+        "name": "Make data tables responsive",
+        "completed": false
+      },
+      {
+        "id": "1742412002003",
+        "name": "Adjust form layouts",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 0
+  },
+  {
+    "id": 3,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Optimize database queries for dashboard performance",
+    "dueDate": "2024-08-05T14:00:00.000Z",
+    "priority": "High",
+    "category": "Development",
+    "status": "In Progress",
+    "taskType": "Large",
+    "points": 5,
+    "notes": "Dashboard is loading too slowly due to inefficient database queries. Need to implement caching, optimize joins, and possibly restructure database schema for analytics views.",
+    "subtasks": [
+      {
+        "id": "1742412003001",
+        "name": "Profile existing queries",
+        "completed": true
+      },
+      {
+        "id": "1742412003002",
+        "name": "Optimize main dashboard query",
+        "completed": true
+      },
+      {
+        "id": "1742412003003",
+        "name": "Implement Redis caching",
+        "completed": false
+      },
+      {
+        "id": "1742412003004",
+        "name": "Create materialized views",
+        "completed": false
+      },
+      {
+        "id": "1742412003005",
+        "name": "Implement query pagination",
+        "completed": false
+      },
+      {
+        "id": "1742412003006",
+        "name": "Write performance tests",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 33
+  },
+  {
+    "id": 4,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Add unit tests for utility functions",
+    "dueDate": "2024-07-25T09:30:00.000Z",
+    "priority": "Low",
+    "category": "Development",
+    "status": "Completed",
+    "taskType": "Small",
+    "points": 1,
+    "notes": "Increase test coverage for common utility functions. Focus on date formatting, string manipulation, and calculation helpers.",
+    "subtasks": [
+      {
+        "id": "1742412004001",
+        "name": "Set up test framework",
+        "completed": true
+      },
+      {
+        "id": "1742412004002",
+        "name": "Write date utility tests",
+        "completed": true
+      },
+      {
+        "id": "1742412004003",
+        "name": "Write string utility tests",
+        "completed": true
+      }
+    ],
+    "processId": null,
+    "progress": 100
+  },
+  {
+    "id": 5,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Research and implement CI/CD pipeline improvements",
+    "dueDate": "2024-09-10T11:00:00.000Z",
+    "priority": "Medium",
+    "category": "Research",
+    "status": "In Progress",
+    "taskType": "Large",
+    "points": 5,
+    "notes": "Current CI/CD pipeline is slow and unreliable. Research modern approaches and implement improvements to reduce build times and increase reliability.",
+    "subtasks": [
+      {
+        "id": "1742412005001",
+        "name": "Document current pipeline",
+        "completed": true
+      },
+      {
+        "id": "1742412005002",
+        "name": "Research caching strategies",
+        "completed": true
+      },
+      {
+        "id": "1742412005003",
+        "name": "Implement parallel testing",
+        "completed": false
+      },
+      {
+        "id": "1742412005004",
+        "name": "Set up Docker layer caching",
+        "completed": false
+      },
+      {
+        "id": "1742412005005",
+        "name": "Optimize test suite",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 40
+  },
+  {
+    "id": 6,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Update dependency packages to latest versions",
+    "dueDate": "2024-08-02T15:45:00.000Z",
+    "priority": "Low",
+    "category": "Maintenance",
+    "status": "To Do",
+    "taskType": "Small",
+    "points": 1,
+    "notes": "Several dependencies are outdated and have security vulnerabilities. Update all packages to latest versions and ensure compatibility.",
+    "subtasks": [
+      {
+        "id": "1742412006001",
+        "name": "Audit current dependencies",
+        "completed": false
+      },
+      {
+        "id": "1742412006002",
+        "name": "Update non-breaking packages",
+        "completed": false
+      },
+      {
+        "id": "1742412006003",
+        "name": "Test and update major version changes",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 0
+  },
+  {
+    "id": 7,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Create product feature tour for new users",
+    "dueDate": "2024-08-20T13:15:00.000Z",
+    "priority": "Medium",
+    "category": "Design",
+    "status": "To Do",
+    "taskType": "Medium",
+    "points": 3,
+    "notes": "Design and implement an interactive tour that highlights key features for new users. Should be dismissable and saveable for returning users.",
+    "subtasks": [
+      {
+        "id": "1742412007001",
+        "name": "Design tour flow",
+        "completed": false
+      },
+      {
+        "id": "1742412007002",
+        "name": "Create tour component",
+        "completed": false
+      },
+      {
+        "id": "1742412007003",
+        "name": "Write tour content",
+        "completed": false
+      },
+      {
+        "id": "1742412007004",
+        "name": "Implement user preferences",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 0
+  },
+  {
+    "id": 8,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Integrate payment gateway for subscription model",
+    "dueDate": "2024-09-15T17:00:00.000Z",
+    "priority": "High",
+    "category": "Development",
+    "status": "On Hold",
+    "taskType": "Large",
+    "points": 5,
+    "notes": "Integrate Stripe payment gateway for monthly and annual subscription plans. Include webhook handling for payment events and implement subscription management dashboard.",
+    "subtasks": [
+      {
+        "id": "1742412008001",
+        "name": "Set up Stripe account",
+        "completed": true
+      },
+      {
+        "id": "1742412008002",
+        "name": "Design subscription plans",
+        "completed": true
+      },
+      {
+        "id": "1742412008003",
+        "name": "Implement payment form",
+        "completed": false
+      },
+      {
+        "id": "1742412008004",
+        "name": "Handle webhook events",
+        "completed": false
+      },
+      {
+        "id": "1742412008005",
+        "name": "Build subscription management UI",
+        "completed": false
+      },
+      {
+        "id": "1742412008006",
+        "name": "Implement invoicing system",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 30
+  },
+  {
+    "id": 9,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Fix reported bug in user export functionality",
+    "dueDate": "2024-07-22T10:30:00.000Z",
+    "priority": "High",
+    "category": "Development",
+    "status": "In Progress",
+    "taskType": "Small",
+    "points": 1,
+    "notes": "When exporting users with special characters in their names, the CSV export fails. Need to properly escape special characters and handle encoding issues.",
+    "subtasks": [
+      {
+        "id": "1742412009001",
+        "name": "Reproduce issue",
+        "completed": true
+      },
+      {
+        "id": "1742412009002",
+        "name": "Fix character encoding",
+        "completed": false
+      },
+      {
+        "id": "1742412009003",
+        "name": "Add test cases",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 33
+  },
+  {
+    "id": 10,
+    "userId": 1,
+    "assignedToId": null,
+    "projectId": null,
+    "milestoneId": null,
+    "name": "Create data visualization dashboard for analytics",
+    "dueDate": "2024-10-01T12:00:00.000Z",
+    "priority": "Medium",
+    "category": "Design",
+    "status": "To Do",
+    "taskType": "Large",
+    "points": 5,
+    "notes": "Design and implement a comprehensive analytics dashboard with charts, graphs, and filterable data views. Should include user activity, revenue metrics, and product usage statistics.",
+    "subtasks": [
+      {
+        "id": "1742412010001",
+        "name": "Design dashboard wireframes",
+        "completed": false
+      },
+      {
+        "id": "1742412010002",
+        "name": "Set up charting library",
+        "completed": false
+      },
+      {
+        "id": "1742412010003",
+        "name": "Create user activity charts",
+        "completed": false
+      },
+      {
+        "id": "1742412010004",
+        "name": "Build revenue metrics view",
+        "completed": false
+      },
+      {
+        "id": "1742412010005",
+        "name": "Implement product usage statistics",
+        "completed": false
+      },
+      {
+        "id": "1742412010006",
+        "name": "Add filtering capabilities",
+        "completed": false
+      },
+      {
+        "id": "1742412010007",
+        "name": "Create data export functionality",
+        "completed": false
+      },
+      {
+        "id": "1742412010008",
+        "name": "Optimize for performance",
+        "completed": false
+      }
+    ],
+    "processId": null,
+    "progress": 0
+  }
+]

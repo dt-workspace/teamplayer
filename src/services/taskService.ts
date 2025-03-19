@@ -38,7 +38,7 @@ export const createPersonalTask = async (
             points: task.points,
             category: task.category || null,
             notes: task.notes || null,
-            subtasks: task.subtasks ? JSON.stringify(task.subtasks) : null,
+            subtasks: task.subtasks,
             projectId: task.projectId || null,
             processId: task.processId || null,
             milestoneId: task.milestoneId || null,
@@ -73,9 +73,16 @@ export const createPersonalTask = async (
  * @returns Task or null
  */
 export const getPersonalTaskById = async (id: number): Promise<PersonalTask | null> => {
-    const db = await localDB();
-    const [task] = await db.select().from(personalTasks).where(eq(personalTasks.id, id)).limit(1);
-    return task || null;
+    try {
+        const db = await localDB();
+        if (!db) throw new Error('Database connection failed');
+        console.log('Getting task by ID:', id);
+        const [task] = await db.select().from(personalTasks).where(eq(personalTasks.id, id)).limit(1);
+        return task || null;
+    } catch (error) {
+        console.error('Error in getPersonalTaskById:', error);
+        throw error instanceof Error ? error : new Error('Unknown error occurred');
+    }
 };
 
 /**

@@ -38,6 +38,7 @@ import {
             return { success: false, error: `${field} is required` };
           }
         }
+        console.log(task)
 
         const newTask = await createPersonalTask(userId, task);
         return { success: true, data: newTask, message: 'Task created successfully' };
@@ -127,6 +128,8 @@ import {
       updates: Partial<NewPersonalTask>
     ): Promise<ControllerResponse<PersonalTask>> {
       try {
+        console.log('updatessssss',updates)
+
         const task = await updatePersonalTask(id, updates);
         return { success: true, data: task, message: 'Task updated successfully' };
       } catch (error) {

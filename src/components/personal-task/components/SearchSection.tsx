@@ -41,8 +41,8 @@ const styles = StyleSheet.create({
   searchFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.md
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm
   },
   searchContainer: {
     flex: 1,
@@ -50,18 +50,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    marginRight: spacing.sm
+    paddingHorizontal: spacing.sm,
+    marginRight: spacing.xs
   },
   searchInput: {
     ...typography.body1,
     flex: 1,
     color: colors.text,
-    paddingVertical: spacing.sm,
-    marginLeft: spacing.sm
+    paddingVertical: spacing.xs,
+    marginLeft: spacing.xs,
+    fontSize: 14
   },
   filterButton: {
-    padding: spacing.sm,
+    padding: spacing.xs,
     backgroundColor: colors.card,
     borderRadius: borderRadius.md
   }

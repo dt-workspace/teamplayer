@@ -1,39 +1,104 @@
-// src/components/personal-task/PersonalTaskModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
-  View,
-  Modal,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   StyleSheet,
   Text,
+  View,
   TouchableOpacity,
+  StatusBar,
+  Animated,
 } from 'react-native';
+import RBSheet from 'react-native-raw-bottom-sheet';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, spacing, elevation } from '@constants/theme';
-import { ProjectSelector } from './ProjectSelector';
-import { RunRateTaskOptions } from './RunRateTaskOptions';
-import { Project } from '@models/Project';
-import { ProjectController } from '@controllers/ProjectController';
 import { PersonalTask, PersonalTaskModalProps } from './types';
-import { TaskType, TaskStatus } from '@components/project-run-rate/types';
-import { authController } from '@controllers/index';
 import { FormFields } from './components/FormFields';
 import { DateTimeField } from './components/DateTimeField';
 import { SubtaskManager } from './components/SubtaskManager';
 import { ReminderManager } from './components/ReminderManager';
 
-export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
-  visible,
+// Update the prop types to include isVisible
+interface PersonalTaskModalProps {
+  ref: any;
+  onClose: () => void;
+  onSave: (task: PersonalTask) => void;
+  initialTask?: PersonalTask | null;
+  isVisible?: boolean;
+}
+
+export const PersonalTaskModal = forwardRef<RBSheet, PersonalTaskModalProps>(({
   onClose,
   onSave,
   initialTask,
-}) => {
+  isVisible
+}, ref) => {
+  const sheetRef = React.useRef<RBSheet>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  
+  // Forward the ref methods
+  useImperativeHandle(ref, () => ({
+    open: () => {
+      if (sheetRef.current && !isSheetOpen) {
+        sheetRef.current.open();
+        setIsSheetOpen(true);
+      }
+    },
+    close: () => {
+      if (sheetRef.current && isSheetOpen) {
+        sheetRef.current.close();
+        setIsSheetOpen(false);
+      }
+    }
+  }));
+
+  // Watch for isVisible prop changes
+  useEffect(() => {
+    if (isVisible && !isSheetOpen && sheetRef.current) {
+      sheetRef.current.open();
+      setIsSheetOpen(true);
+    } else if (!isVisible && isSheetOpen && sheetRef.current) {
+      sheetRef.current.close();
+      setIsSheetOpen(false);
+    }
+  }, [isVisible, isSheetOpen]);
+
+  // Reset task data when initialTask changes or modal opens
+  useEffect(() => {
+    if (isVisible || isSheetOpen) {
+      const taskType = initialTask?.taskType || 'Small';
+      // Set default points based on task type
+      let points = 1;
+      if (taskType === 'Medium') points = 3;
+      if (taskType === 'Large') points = 5;
+      
+      // Use initialTask points if available, otherwise use calculated points
+      const finalPoints = initialTask?.points || points;
+      
+      setTask({
+        name: initialTask?.name || '',
+        dueDate: initialTask?.due_date ? new Date(initialTask?.due_date) : new Date(),
+        priority: initialTask?.priority || 'Medium',
+        category: initialTask?.category || 'Other',
+        notes: initialTask?.notes || '',
+        status: initialTask?.status || 'To Do',
+        progress: initialTask?.progress || 0,
+        subtasks: initialTask?.subtasks || [],
+        reminders: initialTask?.reminders || [],
+        projectId: initialTask?.projectId || null,
+        runRateValues: initialTask?.runRateValues || null,
+        taskType: taskType,
+        points: finalPoints
+      });
+      setErrors({});
+    }
+  }, [initialTask, isVisible, isSheetOpen]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [task, setTask] = useState<PersonalTask>({
     name: initialTask?.name || '',
-    dueDate: initialTask?.dueDate || new Date(),
+    dueDate: initialTask?.due_date ? new Date(initialTask?.due_date) : new Date(),
     priority: initialTask?.priority || 'Medium',
     category: initialTask?.category || 'Other',
     notes: initialTask?.notes || '',
@@ -50,21 +115,31 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [newSubtaskName, setNewSubtaskName] = useState('');
-  const [newReminderDate, setNewReminderDate] = useState(new Date());
-  const [showReminderDatePicker, setShowReminderDatePicker] = useState(false);
-  const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  const [runRateTaskType, setRunRateTaskType] = useState<TaskType>('Small');
-  const [runRateTaskStatus, setRunRateTaskStatus] = useState<TaskStatus>('To Do');
+  const [activeSection, setActiveSection] = useState<'details' | 'subtasks' | 'reminders'>('details');
 
-  const projectController = new ProjectController();
+  // Animation value for tab transitions
+  const [fadeAnim] = useState(new Animated.Value(1));
+  
+  // Animate content when changing tabs
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [activeSection]);
 
   // Handle date change
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      // Preserve the time from the existing due date
       const newDate = new Date(selectedDate);
       newDate.setHours(task.dueDate.getHours(), task.dueDate.getMinutes());
       setTask({ ...task, dueDate: newDate });
@@ -75,39 +150,17 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
   const handleTimeChange = (event: any, selectedTime?: Date) => {
     setShowTimePicker(false);
     if (selectedTime) {
-      // Preserve the date but update the time
       const newDate = new Date(task.dueDate);
       newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
       setTask({ ...task, dueDate: newDate });
     }
   };
 
-  // Handle reminder date change
-  const handleReminderDateChange = (event: any, selectedDate?: Date) => {
-    setShowReminderDatePicker(false);
-    if (selectedDate) {
-      // Preserve the time from the existing reminder date
-      const newDate = new Date(selectedDate);
-      newDate.setHours(newReminderDate.getHours(), newReminderDate.getMinutes());
-      setNewReminderDate(newDate);
-    }
-  };
-
-  // Handle reminder time change
-  const handleReminderTimeChange = (event: any, selectedTime?: Date) => {
-    setShowReminderTimePicker(false);
-    if (selectedTime) {
-      // Preserve the date but update the time
-      const newDate = new Date(newReminderDate);
-      newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
-      setNewReminderDate(newDate);
-    }
-  };
 
   // Add a new subtask
   const addSubtask = () => {
     if (newSubtaskName.trim()) {
-      const newSubtask: Subtask = {
+      const newSubtask = {
         id: Date.now().toString(),
         name: newSubtaskName.trim(),
         completed: false,
@@ -131,238 +184,179 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
     setTask({ ...task, subtasks: updatedSubtasks });
   };
 
-  // Add a new reminder
-  const addReminder = () => {
-    const newReminder: Reminder = {
-      id: Date.now().toString(),
-      time: newReminderDate,
-      notificationSound: 'default',
-    };
-    setTask({ ...task, reminders: [...task.reminders, newReminder] });
-    setNewReminderDate(new Date());
+  // Handle form fields changes
+  const handleNameChange = (value: string) => setTask({ ...task, name: value });
+  const handlePriorityChange = (value: typeof task.priority) => setTask({ ...task, priority: value });
+  const handleStatusChange = (value: typeof task.status) => setTask({ ...task, status: value });
+  const handleTaskTypeChange = (value: typeof task.taskType) => {
+    // Set points based on task type
+    let points = 1;
+    if (value === 'Medium') points = 3;
+    if (value === 'Large') points = 5;
+    
+    setTask({ ...task, taskType: value, points });
   };
-
-  // Remove a reminder
-  const removeReminder = (id: string) => {
-    const updatedReminders = task.reminders.filter(reminder => reminder.id !== id);
-    setTask({ ...task, reminders: updatedReminders });
-  };
-
-
-  // Load projects when component mounts
-  useEffect(() => {
-    if (visible) {
-      // Initialize run rate values if a project is selected
-      if (initialTask?.projectId && initialTask?.runRateValues) {
-        setRunRateTaskType(initialTask.runRateValues.type);
-        setRunRateTaskStatus(initialTask.runRateValues.status);
-      }
-    }
-  }, [visible, initialTask]);
-
-  // Search for projects
-  const handleSearchProjects = async (query: string) => {
-    try {
-      setIsLoadingProjects(true);
-      const user = await authController.getCurrentUser();
-      if (!user) {
-        return;
-      }
-      const response = await projectController.getProjectsByUser(user?.id);
-
-      if (response.success && response.data) {
-        // Filter projects based on search query
-        const filteredProjects = response.data.filter(project =>
-          project.name.toLowerCase().includes(query.toLowerCase())
-        );
-        setProjects(filteredProjects);
-      }
-    } catch (error) {
-      console.error('Error searching projects:', error);
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  };
+  const handleCategoryChange = (value: typeof task.category) => setTask({ ...task, category: value });
+  const handleNotesChange = (value: string) => setTask({ ...task, notes: value });
 
   // Validate form fields
   const validateForm = () => {
-    const newErrors = {
-      name: '',
-      dueDate: '',
-      priority: '',
-      status: '',
-      taskType: '',
-      points: ''
+    const newErrors: Record<string, string> = {
+      name: task.name.trim() ? '' : 'Task name is required',
+      dueDate: task.dueDate ? '' : 'Due date is required',
+      priority: task.priority ? '' : 'Priority is required',
+      status: task.status ? '' : 'Status is required',
+      taskType: task.taskType ? '' : 'Task type is required',
+      points: task.points >= 1 ? '' : 'Points must be greater than 0'
     };
 
-    if (!task.name.trim()) {
-      newErrors.name = 'Task name is required';
-    }
-
-    if (!task.dueDate) {
-      newErrors.dueDate = 'Due date is required';
-    }
-
-    if (!task.priority) {
-      newErrors.priority = 'Priority is required';
-    }
-
-    if (!task.status) {
-      newErrors.status = 'Status is required';
-    }
-
-    if (!task.taskType) {
-      newErrors.taskType = 'Task type is required';
-    }
-
-    if (task.points < 1) {
-      newErrors.points = 'Points must be greater than 0';
-    }
-
-    setErrors(newErrors);
-    return Object.values(newErrors).every(error => !error);
+    const filteredErrors = Object.fromEntries(
+      Object.entries(newErrors).filter(([_, value]) => Boolean(value))
+    );
+    
+    setErrors(filteredErrors);
+    return Object.keys(filteredErrors).length === 0;
   };
-
-  // Handle form submission
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSave(task);
-      onClose();
-    }
-  };
-
-  // Handle project selection
-  const handleSelectProject = (project: Project | null) => {
-    if (project) {
-      setTask(prev => ({
-        ...prev,
-        projectId: project.id,
-        // Initialize run rate values when a project is selected
-        runRateValues: prev.runRateValues || {
-          type: runRateTaskType,
-          status: runRateTaskStatus,
-          points: getPointsForTaskType(runRateTaskType)
-        }
-      }));
-    } else {
-      setTask(prev => ({
-        ...prev,
-        projectId: null,
-        runRateValues: null
-      }));
-    }
-  };
-
-  // Get points for task type (for run rate calculations)
-  const getPointsForTaskType = (type: TaskType): number => {
-    switch (type) {
-      case 'Small': return 1;
-      case 'Medium': return 3;
-      case 'Large': return 5;
-      default: return 1;
-    }
-  };
-
-  // Handle run rate task type change
-  const handleRunRateTaskTypeChange = (type: TaskType) => {
-    setRunRateTaskType(type);
-    if (task.runRateValues) {
-      setTask(prev => ({
-        ...prev,
-        runRateValues: {
-          ...prev.runRateValues!,
-          type,
-          points: getPointsForTaskType(type)
-        }
-      }));
-    }
-  };
-
-  // Handle run rate task status change
-  const handleRunRateTaskStatusChange = (status: TaskStatus) => {
-    setRunRateTaskStatus(status);
-    if (task.runRateValues) {
-      setTask(prev => ({
-        ...prev,
-        runRateValues: {
-          ...prev.runRateValues!,
-          status
-        }
-      }));
-    }
-  };
-
-
-
 
   // Handle save
   const handleSave = () => {
     if (validateForm()) {
-      const taskToSave = {
+      // Create a copy of the task with proper formatting for database storage
+      const formattedTask = {
         ...task,
-        taskType: task.runRateValues?.type || task.taskType,
-        points: task.runRateValues?.points || getPointsForTaskType(task.taskType as TaskType)
+        // Convert Date object to ISO string for database storage
+        dueDate: task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate,
+        // Convert subtasks array to JSON string
+        subtasks: task.subtasks.length ? JSON.stringify(task.subtasks) : null
       };
-      onSave(taskToSave);
+      
+      onSave(formattedTask);
       onClose();
+    } else {
+      // If there are errors, switch to the details tab
+      setActiveSection('details');
     }
   };
 
+  // Handle clean up on close
+  const handleOnClose = () => {
+    // Update our local state
+    setIsSheetOpen(false);
+    
+    // Allow parent to update its state
+    onClose();
+  };
+
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
+    <RBSheet
+      ref={sheetRef}
+      onClose={handleOnClose}
+      height={800}
+      openDuration={250}
+      closeOnDragDown={true}
+      dragFromTopOnly={true}
+      customStyles={{
+        container: styles.modalContainer,
+        draggableIcon: styles.draggableIcon,
+      }}
     >
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{initialTask ? 'Edit Task' : 'New Task'}</Text>
+        <TouchableOpacity onPress={handleOnClose} style={styles.closeButton}>
+          <Icon name="close" size={24} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[styles.tab, activeSection === 'details' && styles.activeTab]} 
+          onPress={() => setActiveSection('details')}
+        >
+          <Icon 
+            name="card-text-outline" 
+            size={20} 
+            color={activeSection === 'details' ? colors.primary : colors.textSecondary} 
+          />
+          <Text style={[styles.tabText, activeSection === 'details' && styles.activeTabText]}>Details</Text>
+          {Object.keys(errors).length > 0 && activeSection !== 'details' && (
+            <View style={styles.errorDot} />
+          )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.tab, activeSection === 'subtasks' && styles.activeTab]} 
+          onPress={() => setActiveSection('subtasks')}
+        >
+          <Icon 
+            name="format-list-checks" 
+            size={20} 
+            color={activeSection === 'subtasks' ? colors.primary : colors.textSecondary} 
+          />
+          <Text style={[styles.tabText, activeSection === 'subtasks' && styles.activeTabText]}>Subtasks</Text>
+          {task.subtasks.length > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{task.subtasks.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalContainer}
+        style={styles.container}
       >
-        <FormFields
-          task={task}
-          setTask={setTask}
-          errors={errors}
-        />
+        <Animated.ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          style={{ opacity: fadeAnim }}
+        >
+          {activeSection === 'details' && (
+            <>
+              <FormFields
+                name={task.name}
+                priority={task.priority}
+                status={task.status}
+                taskType={task.taskType}
+                category={task.category}
+                notes={task.notes}
+                errors={errors}
+                onNameChange={handleNameChange}
+                onPriorityChange={handlePriorityChange}
+                onStatusChange={handleStatusChange}
+                onTaskTypeChange={handleTaskTypeChange}
+                onCategoryChange={handleCategoryChange}
+                onNotesChange={handleNotesChange}
+              />
 
-        <DateTimeField
-          date={task.dueDate}
-          showDatePicker={showDatePicker}
-          showTimePicker={showTimePicker}
-          setShowDatePicker={setShowDatePicker}
-          setShowTimePicker={setShowTimePicker}
-          onDateChange={handleDateChange}
-          onTimeChange={handleTimeChange}
-          error={errors.dueDate}
-        />
+              <DateTimeField
+                dueDate={task.dueDate}
+                showDatePicker={showDatePicker}
+                showTimePicker={showTimePicker}
+                error={errors.dueDate}
+                onDateChange={handleDateChange}
+                onTimeChange={handleTimeChange}
+                onShowDatePicker={() => setShowDatePicker(true)}
+                onShowTimePicker={() => setShowTimePicker(true)}
+              />
+            </>
+          )}
 
-        <SubtaskManager
-          subtasks={task.subtasks}
-          newSubtaskName={newSubtaskName}
-          setNewSubtaskName={setNewSubtaskName}
-          onAddSubtask={addSubtask}
-          onToggleSubtask={toggleSubtaskCompletion}
-          onRemoveSubtask={removeSubtask}
-        />
+          {activeSection === 'subtasks' && (
+            <SubtaskManager
+              subtasks={task.subtasks}
+              newSubtaskName={newSubtaskName}
+              onNewSubtaskNameChange={setNewSubtaskName}
+              onAddSubtask={addSubtask}
+              onToggleSubtask={toggleSubtaskCompletion}
+              onRemoveSubtask={removeSubtask}
+            />
+          )}
 
-        <ReminderManager
-          reminders={task.reminders}
-          newReminderDate={newReminderDate}
-          showDatePicker={showReminderDatePicker}
-          showTimePicker={showReminderTimePicker}
-          setShowDatePicker={setShowReminderDatePicker}
-          setShowTimePicker={setShowReminderTimePicker}
-          onDateChange={handleReminderDateChange}
-          onTimeChange={handleReminderTimeChange}
-          onAddReminder={addReminder}
-          onRemoveReminder={removeReminder}
-        />
+        </Animated.ScrollView>
 
-
-
-
-
-        <View style={styles.modalFooter}>
+        <View style={styles.footer}>
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={onClose}
@@ -370,7 +364,7 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.saveButton}
+            style={[styles.saveButton, !task.name.trim() && styles.disabledButton]}
             onPress={handleSave}
             disabled={!task.name.trim()}
           >
@@ -378,7 +372,127 @@ export const PersonalTaskModal: React.FC<PersonalTaskModalProps> = ({
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </RBSheet>
   );
-};
+});
 
+const styles = StyleSheet.create({
+  modalContainer: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    ...elevation.md,
+  },
+  draggableIcon: {
+    backgroundColor: colors.border,
+    width: 40,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  closeButton: {
+    padding: spacing.xs,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
+  },
+  tabText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  activeTabText: {
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  scrollContent: {
+    padding: spacing.md,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  cancelButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    color: colors.text,
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+  },
+  disabledButton: {
+    backgroundColor: colors.border,
+  },
+  saveButtonText: {
+    color: colors.white,
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  errorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.error,
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  badge: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+
+  badgeText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});
